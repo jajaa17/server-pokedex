@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Server Pokedex</title>
+<style>
+  :root {
+    --bg: #16181d;
+    --panel: #1d2027;
+    --panel-2: #262a33;
+    --line: #333846;
+    --text: #eef0f4;
+    --muted: #9096a6;
+    --accent: #d8432f;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+    line-height: 1.4;
+  }
+
+  header {
+    padding: 28px 20px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 26px;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  input[type="search"], select {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  input[type="search"] { flex: 1 1 220px; min-width: 160px; }
+  select { flex: 0 0 auto; }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .count {
+    padding: 10px 20px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    padding: 4px 20px 40px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px;
+    cursor: pointer;
+  }
+  .card:hover { border-color: #4a5064; }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .dex {
+    font-family: var(--mono);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .name { font-size: 16px; font-weight: 600; margin: 4px 0 8px; }
+  .types { display: flex; gap: 6px; flex-wrap: wrap; }
+  .type-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+    color: #1a1a1a;
+    text-transform: capitalize;
+  }
+  .missing-note {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #e0a45c;
+  }
+
+  /* Type colors, matching the standard Pokemon type palette */
+  .t-normal   { background: #A8A77A; } .t-fire   { background: #EE8130; }
+  .t-water    { background: #6390F0; } .t-electric{ background: #F7D02C; }
+  .t-grass    { background: #7AC74C; } .t-ice    { background: #96D9D6; }
+  .t-fighting { background: #C22E28; } .t-poison { background: #A33EA1; }
+  .t-ground   { background: #E2BF65; } .t-flying { background: #A98FF3; }
+  .t-psychic  { background: #F95587; } .t-bug    { background: #A6B91A; }
+  .t-rock     { background: #B6A136; } .t-ghost  { background: #735797; }
+  .t-dragon   { background: #6F35FC; } .t-dark   { background: #705746; }
+  .t-steel    { background: #B7B7CE; } .t-fairy  { background: #D685AD; }
+
+  /* Detail overlay */
+  #overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 20;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+  }
+  #overlay.open { display: flex; }
+  .sheet {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    max-width: 480px;
+    width: 100%;
+    padding: 24px;
+  }
+  .sheet-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .sheet h2 { margin: 0 0 2px; font-size: 22px; }
+  .sheet .dex { display: block; margin-bottom: 10px; }
+  .spawn-row {
+    border-top: 1px solid var(--line);
+    padding: 10px 0;
+    font-size: 13px;
+  }
+  .spawn-row .bucket {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .spawn-row .biomes { color: var(--text); }
+  .spawn-row .level { color: var(--muted); margin-top: 2px; }
+  .no-spawn-text { color: var(--muted); font-size: 13px; padding-top: 10px; }
+
+  footer {
+    padding: 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Server Pokedex</h1>
+  <p>Search every Pokemon available on this server (Cobblemon + All The Mons x Mega Showdown) and where to find them.</p>
+</header>
+
+<div class="controls">
+  <input type="search" id="search" placeholder="Search by name or dex number..." autocomplete="off">
+  <select id="type-filter">
+    <option value="">All types</option>
+  </select>
+  <select id="sort">
+    <option value="dex">Sort: Dex number</option>
+    <option value="name">Sort: Name (A-Z)</option>
+    <option value="type">Sort: Primary type</option>
+  </select>
+</div>
+
+<div class="count" id="count"></div>
+<div id="grid"></div>
+
+<div id="overlay">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<footer>Data pulled from the server's Cobblemon and All The Mons x Mega Showdown files. Spawn odds and biomes can change when the mods update.</footer>
+
+<script>
+let DEX = [];
+
+async function load() {
+  const res = await fetch('pokedex.json');
+  DEX = await res.json();
+
+  const types = [...new Set(DEX.flatMap(p => p.types))].sort();
+  const typeSelect = document.getElementById('type-filter');
+  for (const t of types) {
+    const opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    typeSelect.appendChild(opt);
+  }
+
+  render();
+}
+
+function render() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const typeFilter = document.getElementById('type-filter').value;
+  const sortBy = document.getElementById('sort').value;
+
+  let list = DEX.filter(p => {
+    if (typeFilter && !p.types.includes(typeFilter)) return false;
+    if (!q) return true;
+    return p.name.toLowerCase().includes(q) || String(p.dex).includes(q);
+  });
+
+  if (sortBy === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  else if (sortBy === 'type') list = [...list].sort((a, b) =>
+    (a.types[0] || '').localeCompare(b.types[0] || '') || a.dex - b.dex);
+  else list = [...list].sort((a, b) => a.dex - b.dex);
+
+  document.getElementById('count').textContent =
+    `${list.length} of ${DEX.length} Pokemon`;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  for (const p of list) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.innerHTML = `
+      <div class="card-top">
+        <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+      </div>
+      <div class="name">${p.name}</div>
+      <div class="types">
+        ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
+      </div>
+      ${p.no_spawn ? '<div class="missing-note">Not currently findable</div>' : ''}
+    `;
+    card.addEventListener('click', () => openDetail(p));
+    card.addEventListener('keypress', e => { if (e.key === 'Enter') openDetail(p); });
+    grid.appendChild(card);
+  }
+}
+
+function openDetail(p) {
+  const sheet = document.getElementById('sheet');
+  let spawnHtml;
+  if (p.no_spawn) {
+    spawnHtml = '<p class="no-spawn-text">Not currently obtainable through a wild spawn on this server. Ask staff if you are looking for this one.</p>';
+  } else if (!p.spawns.length) {
+    spawnHtml = '<p class="no-spawn-text">No wild spawn data found. This Pokemon may only be obtainable by evolution, breeding, or a special event.</p>';
+  } else {
+    spawnHtml = p.spawns.map(s => `
+      <div class="spawn-row">
+        <span class="bucket">${s.bucket}</span>
+        <div class="biomes">${(s.biomes && s.biomes.length) ? s.biomes.join(', ') : 'Any biome'}</div>
+        ${s.level ? `<div class="level">Level ${s.level[0]}-${s.level[1]}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  sheet.innerHTML = `
+    <button class="sheet-close" aria-label="Close">&times;</button>
+    <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+    <h2>${p.name}</h2>
+    <div class="types">
+      ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
+    </div>
+    <div style="margin-top:14px;">${spawnHtml}</div>
+  `;
+  sheet.querySelector('.sheet-close').addEventListener('click', closeDetail);
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target.id === 'overlay') closeDetail();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('type-filter').addEventListener('change', render);
+document.getElementById('sort').addEventListener('change', render);
+
+load();
+</script>
+</body>
+</html>
