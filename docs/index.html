@@ -86,7 +86,7 @@
   .card-top {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
+    align-items: flex-start;
     gap: 8px;
   }
   .dex {
@@ -94,6 +94,26 @@
     color: var(--muted);
     font-size: 12px;
   }
+  .sprite {
+    width: 56px;
+    height: 56px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    flex: 0 0 auto;
+    background: var(--panel-2);
+    border-radius: 6px;
+  }
+  .sprite-lg {
+    width: 96px;
+    height: 96px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    display: block;
+    margin: 0 auto 8px;
+    background: var(--panel-2);
+    border-radius: 8px;
+  }
+  .card-head { display: flex; align-items: center; gap: 10px; }
   .name { font-size: 16px; font-weight: 600; margin: 4px 0 8px; }
   .types { display: flex; gap: 6px; flex-wrap: wrap; }
   .type-badge {
@@ -165,8 +185,16 @@
     text-transform: uppercase;
     margin-bottom: 4px;
   }
-  .spawn-row .biomes { color: var(--text); }
-  .spawn-row .level { color: var(--muted); margin-top: 2px; }
+  .spawn-row .biomes { color: var(--text); display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .biome-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+  }
+  .spawn-row .level { color: var(--muted); margin-top: 6px; }
   .no-spawn-text { color: var(--muted); font-size: 13px; padding-top: 10px; }
 
   footer {
@@ -189,6 +217,9 @@
   <select id="type-filter">
     <option value="">All types</option>
   </select>
+  <select id="biome-filter">
+    <option value="">All biomes</option>
+  </select>
   <select id="sort">
     <option value="dex">Sort: Dex number</option>
     <option value="name">Sort: Name (A-Z)</option>
@@ -208,6 +239,38 @@
 <script>
 let DEX = [];
 
+// Sprite from the national dex number (all species on this server, including
+// the ATM x MSD additions, use real national dex numbers, so this works for
+// the whole list). Falls back to a pokeball placeholder if a sprite 404s.
+function spriteUrl(p) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.dex}.png`;
+}
+const SPRITE_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#9096a6" stroke-width="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke="#9096a6" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#16181d" stroke="#9096a6" stroke-width="1.5"/></svg>`
+);
+
+// Turns a spawn condition biome tag like "#cobblemon:is_end" or
+// "#cobblemon:has_block/mud" into a readable label, e.g. "End", "Mud (block)".
+function prettyBiome(tag) {
+  let s = tag.replace(/^#/, '');
+  const colon = s.indexOf(':');
+  if (colon !== -1) s = s.slice(colon + 1);
+  let suffix = '';
+  if (s.startsWith('has_block/')) { s = s.slice('has_block/'.length); suffix = ' (block)'; }
+  else if (s.startsWith('is_')) { s = s.slice('is_'.length); }
+  s = s.replace(/[_/]/g, ' ').trim();
+  s = s.replace(/\b\w/g, c => c.toUpperCase());
+  return s + suffix;
+}
+
+function biomeTags(p) {
+  const set = new Set();
+  for (const s of (p.spawns || [])) {
+    for (const b of (s.biomes || [])) set.add(b);
+  }
+  return set;
+}
+
 async function load() {
   const res = await fetch('pokedex.json');
   DEX = await res.json();
@@ -221,16 +284,29 @@ async function load() {
     typeSelect.appendChild(opt);
   }
 
+  const biomeSet = new Set();
+  for (const p of DEX) for (const b of biomeTags(p)) biomeSet.add(b);
+  const biomes = [...biomeSet].sort((a, b) => prettyBiome(a).localeCompare(prettyBiome(b)));
+  const biomeSelect = document.getElementById('biome-filter');
+  for (const b of biomes) {
+    const opt = document.createElement('option');
+    opt.value = b;
+    opt.textContent = prettyBiome(b);
+    biomeSelect.appendChild(opt);
+  }
+
   render();
 }
 
 function render() {
   const q = document.getElementById('search').value.trim().toLowerCase();
   const typeFilter = document.getElementById('type-filter').value;
+  const biomeFilter = document.getElementById('biome-filter').value;
   const sortBy = document.getElementById('sort').value;
 
   let list = DEX.filter(p => {
     if (typeFilter && !p.types.includes(typeFilter)) return false;
+    if (biomeFilter && !biomeTags(p).has(biomeFilter)) return false;
     if (!q) return true;
     return p.name.toLowerCase().includes(q) || String(p.dex).includes(q);
   });
@@ -251,9 +327,14 @@ function render() {
     card.tabIndex = 0;
     card.innerHTML = `
       <div class="card-top">
-        <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+        <div class="card-head">
+          <img class="sprite" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite" loading="lazy">
+          <div>
+            <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+            <div class="name" style="margin:2px 0 0;">${p.name}</div>
+          </div>
+        </div>
       </div>
-      <div class="name">${p.name}</div>
       <div class="types">
         ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
       </div>
@@ -276,7 +357,11 @@ function openDetail(p) {
     spawnHtml = p.spawns.map(s => `
       <div class="spawn-row">
         <span class="bucket">${s.bucket}</span>
-        <div class="biomes">${(s.biomes && s.biomes.length) ? s.biomes.join(', ') : 'Any biome'}</div>
+        <div class="biomes">${
+          (s.biomes && s.biomes.length)
+            ? s.biomes.map(b => `<span class="biome-badge">${prettyBiome(b)}</span>`).join('')
+            : '<span class="biome-badge">Any biome</span>'
+        }</div>
         ${s.level ? `<div class="level">Level ${s.level[0]}-${s.level[1]}</div>` : ''}
       </div>
     `).join('');
@@ -284,6 +369,7 @@ function openDetail(p) {
 
   sheet.innerHTML = `
     <button class="sheet-close" aria-label="Close">&times;</button>
+    <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
     <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
     <h2>${p.name}</h2>
     <div class="types">
@@ -306,6 +392,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(
 
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('type-filter').addEventListener('change', render);
+document.getElementById('biome-filter').addEventListener('change', render);
 document.getElementById('sort').addEventListener('change', render);
 
 load();
