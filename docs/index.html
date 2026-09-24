@@ -263,10 +263,20 @@ function prettyBiome(tag) {
   return s + suffix;
 }
 
+// Biome mods not installed on the server, so their compat biomes never
+// actually spawn anything here even though Cobblemon's spawn files list
+// them for compat. Filtered out everywhere biomes are shown or filtered.
+const EXCLUDED_BIOME_NAMESPACES = new Set(['aether', 'the_bumblezone', 'biomesoplenty']);
+
+function isAllowedBiome(tag) {
+  const ns = tag.replace(/^#/, '').split(':')[0];
+  return !EXCLUDED_BIOME_NAMESPACES.has(ns);
+}
+
 function biomeTags(p) {
   const set = new Set();
   for (const s of (p.spawns || [])) {
-    for (const b of (s.biomes || [])) set.add(b);
+    for (const b of (s.biomes || [])) if (isAllowedBiome(b)) set.add(b);
   }
   return set;
 }
@@ -354,17 +364,33 @@ function openDetail(p) {
   } else if (!p.spawns.length) {
     spawnHtml = '<p class="no-spawn-text">No wild spawn data found. This Pokemon may only be obtainable by evolution, breeding, or a special event.</p>';
   } else {
-    spawnHtml = p.spawns.map(s => `
-      <div class="spawn-row">
-        <span class="bucket">${s.bucket}</span>
-        <div class="biomes">${
-          (s.biomes && s.biomes.length)
-            ? s.biomes.map(b => `<span class="biome-badge">${prettyBiome(b)}</span>`).join('')
-            : '<span class="biome-badge">Any biome</span>'
-        }</div>
-        ${s.level ? `<div class="level">Level ${s.level[0]}-${s.level[1]}</div>` : ''}
-      </div>
-    `).join('');
+    // Drop a spawn row entirely if every biome on it belonged to a mod that
+    // isn't installed (Aether/Bumblezone/BiomesOPlenty compat entries) —
+    // keep rows that had no biome restriction ("any biome") untouched.
+    const rows = p.spawns
+      .map(s => ({
+        bucket: s.bucket,
+        level: s.level,
+        biomes: (s.biomes || []).filter(isAllowedBiome),
+        hadBiomes: (s.biomes || []).length > 0,
+      }))
+      .filter(s => !s.hadBiomes || s.biomes.length > 0);
+
+    if (!rows.length) {
+      spawnHtml = '<p class="no-spawn-text">This Pokemon only had compat spawns for biome mods that aren\'t installed on this server (Aether, Biomes O\'Plenty, The Bumblezone). It may only be obtainable by evolution, breeding, or a special event.</p>';
+    } else {
+      spawnHtml = rows.map(s => `
+        <div class="spawn-row">
+          <span class="bucket">${s.bucket}</span>
+          <div class="biomes">${
+            s.biomes.length
+              ? s.biomes.map(b => `<span class="biome-badge">${prettyBiome(b)}</span>`).join('')
+              : '<span class="biome-badge">Any biome</span>'
+          }</div>
+          ${s.level ? `<div class="level">Level ${s.level[0]}-${s.level[1]}</div>` : ''}
+        </div>
+      `).join('');
+    }
   }
 
   sheet.innerHTML = `
