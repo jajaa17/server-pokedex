@@ -4,85 +4,191 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Server Pokedex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #16181d;
-    --panel: #1d2027;
-    --panel-2: #262a33;
-    --line: #333846;
-    --text: #eef0f4;
-    --muted: #9096a6;
-    --accent: #d8432f;
+    --bg-a: #eaf4ff;
+    --bg-b: #fff7e0;
+    --panel: #ffffff;
+    --panel-2: #f4f6fb;
+    --line: #e7e4d8;
+    --text: #2c2a3a;
+    --muted: #8087a0;
+    --accent: #ee1515;
+    --accent-dark: #c30f0f;
+    --gold: #ffcb05;
+    --blue: #3b6fe0;
     --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --head: 'Baloo 2', ui-rounded, 'Nunito', sans-serif;
+    --body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
-    background: var(--bg);
+    background:
+      radial-gradient(circle at 8% 14%, rgba(255,255,255,0.55) 0 3px, transparent 4px),
+      radial-gradient(circle at 32% 68%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 58% 22%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 78% 78%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 90% 40%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
+      linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 100%);
+    background-attachment: fixed;
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
-    line-height: 1.4;
+    font-family: var(--body);
+    line-height: 1.45;
   }
+  h1, h2, h3, h4 { font-family: var(--head); }
+
+  @keyframes floaty { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-7px) rotate(4deg); } }
+  @keyframes popIn { from { opacity: 0; transform: scale(0.9) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  @keyframes wiggle { 0%, 100% { transform: rotate(0deg) scale(1); } 25% { transform: rotate(-6deg) scale(1.08); } 75% { transform: rotate(6deg) scale(1.08); } }
+  @keyframes spinBall { to { transform: rotate(360deg); } }
 
   header {
-    padding: 28px 20px 18px;
-    border-bottom: 1px solid var(--line);
+    position: relative;
+    padding: 26px 20px 34px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    border-radius: 0 0 28px 28px;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.08), 0 10px 24px rgba(200,20,20,0.25);
+    overflow: hidden;
+  }
+  header::before {
+    /* the little pokedex "lens" lights */
+    content: "";
+    position: absolute;
+    top: 18px; left: 20px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #cdeaff, #3b6fe0 60%, #1c3f8f 100%);
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.85), 0 2px 6px rgba(0,0,0,0.25);
+  }
+  header::after {
+    content: "";
+    position: absolute;
+    top: 24px; left: 52px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #ffcb05;
+    box-shadow: 10px 0 0 #35c25a, 20px 0 0 #ee1515;
+  }
+  .mascot {
+    position: absolute;
+    top: 14px;
+    right: 22px;
+    font-size: 34px;
+    animation: floaty 3.2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.25));
   }
   header h1 {
-    margin: 0 0 4px;
-    font-size: 26px;
-    letter-spacing: -0.01em;
+    margin: 22px 0 4px;
+    font-size: 28px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.15);
+    letter-spacing: 0.01em;
   }
   header p {
     margin: 0;
-    color: var(--muted);
+    color: #ffe5e5;
     font-size: 14px;
+    max-width: 560px;
   }
 
   .controls {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
+    padding: 14px 20px;
     position: sticky;
     top: 0;
     z-index: 5;
   }
+  .controls::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(230,220,190,0.7);
+    z-index: -1;
+  }
   input[type="search"], select {
-    background: var(--panel-2);
-    border: 1px solid var(--line);
+    background: var(--panel);
+    border: 2px solid var(--line);
     color: var(--text);
-    padding: 9px 12px;
-    border-radius: 6px;
+    padding: 10px 14px;
+    border-radius: 999px;
     font-size: 14px;
+    font-family: var(--body);
+    font-weight: 600;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
   }
   input[type="search"] { flex: 1 1 220px; min-width: 160px; }
-  select { flex: 0 0 auto; }
-  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  select { flex: 0 0 auto; cursor: pointer; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(238,21,21,0.15); }
 
   .count {
-    padding: 10px 20px;
+    padding: 10px 20px 4px;
     color: var(--muted);
     font-size: 13px;
+    font-weight: 700;
+  }
+
+  #loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  .pokeball-spin {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background:
+      linear-gradient(var(--panel), var(--panel)) center/14px 14px no-repeat,
+      linear-gradient(to bottom, var(--accent) 0%, var(--accent) 48%, #222 48%, #222 52%, var(--panel) 52%, var(--panel) 100%);
+    border: 3px solid #222;
+    animation: spinBall 0.9s linear infinite;
   }
 
   #grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 12px;
-    padding: 4px 20px 40px;
+    gap: 14px;
+    padding: 8px 20px 48px;
   }
 
   .card {
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: 18px;
     padding: 14px;
+    padding-top: 16px;
     cursor: pointer;
+    position: relative;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04), 0 6px 14px rgba(60,50,20,0.06);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    animation: popIn 0.25s ease both;
+    overflow: hidden;
   }
-  .card:hover { border-color: #4a5064; }
+  .card::before {
+    /* colored top edge matching primary type, set inline via style attr */
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: var(--type-color, var(--gold));
+  }
+  .card:hover {
+    transform: translateY(-4px) scale(1.015);
+    box-shadow: 0 10px 0 rgba(0,0,0,0.03), 0 16px 26px rgba(60,50,20,0.14);
+    border-color: #f0d98c;
+  }
+  .card:hover .sprite { animation: wiggle 0.5s ease; }
   .card-top {
     display: flex;
     justify-content: space-between;
@@ -91,8 +197,12 @@
   }
   .dex {
     font-family: var(--mono);
-    color: var(--muted);
-    font-size: 12px;
+    color: #fff;
+    background: var(--blue);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
   }
   .sprite {
     width: 56px;
@@ -101,33 +211,34 @@
     image-rendering: -moz-crisp-edges;
     flex: 0 0 auto;
     background: var(--panel-2);
-    border-radius: 6px;
+    border-radius: 12px;
   }
   .sprite-lg {
-    width: 96px;
-    height: 96px;
+    width: 120px;
+    height: 120px;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     display: block;
-    margin: 0 auto 8px;
-    background: var(--panel-2);
-    border-radius: 8px;
+    margin: 0 auto 4px;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,0.25));
   }
   .card-head { display: flex; align-items: center; gap: 10px; }
-  .name { font-size: 16px; font-weight: 600; margin: 4px 0 8px; }
+  .name { font-size: 16px; font-weight: 700; margin: 8px 0 8px; font-family: var(--head); }
   .types { display: flex; gap: 6px; flex-wrap: wrap; }
   .type-badge {
     font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
+    font-weight: 700;
+    padding: 4px 10px;
     border-radius: 999px;
-    color: #1a1a1a;
+    color: #fff;
     text-transform: capitalize;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.12);
   }
   .missing-note {
     margin-top: 8px;
     font-size: 12px;
-    color: #e0a45c;
+    color: #b5790f;
   }
   .form-badge {
     display: inline-block;
@@ -136,47 +247,49 @@
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: #3a3040;
-    color: #c9a8f0;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #efe3ff;
+    color: #7a4fc9;
     vertical-align: middle;
   }
   .snack-section {
     margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #fff6e8;
+    border: 1px solid #f2dfb3;
   }
   .snack-section h4 {
     margin: 0 0 8px;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: var(--muted);
+    color: #a97a1f;
   }
   .snack-row {
     font-size: 13px;
     margin-bottom: 4px;
   }
-  .snack-row .snack-name { color: var(--text); font-weight: 600; }
+  .snack-row .snack-name { color: var(--text); font-weight: 700; }
 
   .mechanics-section {
     margin-top: 14px;
     padding: 10px 12px;
-    border-radius: 8px;
-    background: rgba(255, 200, 90, 0.08);
-    border: 1px solid rgba(255, 200, 90, 0.28);
+    border-radius: 12px;
+    background: #fff0f0;
+    border: 1px solid #f5c9c9;
   }
   .mechanics-section h4 {
     margin: 0 0 8px;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #e0b45c;
+    color: var(--accent-dark);
   }
   .mechanics-note {
     font-size: 13px;
-    line-height: 1.45;
+    line-height: 1.5;
     margin-bottom: 8px;
   }
   .mechanics-note:last-child { margin-bottom: 0; }
@@ -193,10 +306,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 0;
-    border-top: 1px solid var(--line);
+    padding: 8px 4px;
+    border-radius: 10px;
   }
-  .evo-row:first-of-type { border-top: none; }
+  .evo-row:hover { background: var(--panel-2); }
   .evo-sprite {
     width: 40px;
     height: 40px;
@@ -204,18 +317,18 @@
     image-rendering: -moz-crisp-edges;
     flex: 0 0 auto;
     background: var(--panel-2);
-    border-radius: 6px;
+    border-radius: 10px;
   }
-  .evo-arrow { color: var(--muted); flex: 0 0 auto; }
+  .evo-arrow { color: var(--accent); font-weight: 700; flex: 0 0 auto; }
   .evo-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
   .evo-name {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--text);
     text-decoration: none;
     cursor: pointer;
   }
-  .evo-name:hover { text-decoration: underline; }
+  .evo-name:hover { color: var(--accent); }
   .evo-desc { font-size: 12px; color: var(--muted); }
 
   /* Type colors, matching the standard Pokemon type palette */
@@ -229,11 +342,11 @@
   .t-dragon   { background: #6F35FC; } .t-dark   { background: #705746; }
   .t-steel    { background: #B7B7CE; } .t-fairy  { background: #D685AD; }
 
-  /* Detail overlay */
+  /* Detail overlay -- styled like an open Pokedex screen */
   #overlay {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(30,20,10,0.55);
     z-index: 20;
     align-items: flex-start;
     justify-content: center;
@@ -243,25 +356,70 @@
   #overlay.open { display: flex; }
   .sheet {
     background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 22px;
     max-width: 480px;
     width: 100%;
-    padding: 24px;
+    padding: 0 0 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+    animation: popIn 0.2s ease both;
+    overflow: hidden;
+  }
+  .sheet-screen {
+    background: linear-gradient(160deg, var(--screen-color, #7fb8ff) 0%, rgba(255,255,255,0.4) 100%);
+    padding: 20px 24px 10px;
+    text-align: center;
+    position: relative;
   }
   .sheet-close {
-    float: right;
-    background: none;
+    position: absolute;
+    top: 14px; right: 16px;
+    background: rgba(255,255,255,0.7);
     border: none;
-    color: var(--muted);
-    font-size: 20px;
+    color: var(--text);
+    font-size: 18px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
     cursor: pointer;
     line-height: 1;
+    font-weight: 700;
   }
-  .sheet h2 { margin: 0 0 2px; font-size: 22px; }
-  .sheet .dex { display: block; margin-bottom: 10px; }
+  .sheet-close:hover { background: #fff; }
+  .sheet-body { padding: 14px 24px 0; }
+  .sheet h2 { margin: 4px 0 2px; font-size: 24px; font-weight: 800; }
+  .sheet .dex { display: inline-block; margin-bottom: 6px; }
+  .sheet .types { justify-content: center; margin-top: 6px; }
+
+  .flavor-bubble {
+    margin: 14px 0 4px;
+    background: var(--panel-2);
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 16px;
+    position: relative;
+    font-size: 13.5px;
+    line-height: 1.55;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .flavor-bubble .flavor-text { flex: 1 1 auto; }
+  .speak-btn {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: var(--blue);
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+  }
+  .speak-btn:hover { filter: brightness(1.08); }
+  .speak-btn.speaking { animation: wiggle 0.6s ease infinite; background: var(--accent); }
+  .speak-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
+
   .spawn-row {
-    border-top: 1px solid var(--line);
+    border-top: 1px dashed var(--line);
     padding: 10px 0;
     font-size: 13px;
   }
@@ -272,47 +430,57 @@
     color: var(--muted);
     text-transform: uppercase;
     margin-bottom: 4px;
+    font-weight: 700;
   }
   .spawn-row .biomes { color: var(--text); display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
   .biome-badge {
     font-size: 11px;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
-    background: var(--panel-2);
-    border: 1px solid var(--line);
-    color: var(--text);
+    background: #eaf6ea;
+    border: 1px solid #cde8cd;
+    color: #2f7a3d;
+    font-weight: 600;
   }
-  .spawn-row .level { color: var(--muted); margin-top: 6px; }
+  .spawn-row .level { color: var(--muted); margin-top: 6px; font-weight: 700; }
   .condition-line { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .condition-badge {
     font-size: 11px;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
-    background: rgba(120, 160, 255, 0.14);
-    border: 1px solid rgba(120, 160, 255, 0.35);
-    color: #b9cdfd;
+    background: #eaf1ff;
+    border: 1px solid #c8d9fb;
+    color: #2f5ac9;
+    font-weight: 600;
   }
   .bonus-badge {
     font-size: 11px;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
-    background: rgba(120, 220, 140, 0.14);
-    border: 1px solid rgba(120, 220, 140, 0.35);
-    color: #a8e6b8;
+    background: #eafff0;
+    border: 1px solid #bdeecb;
+    color: #1f8a49;
+    font-weight: 600;
   }
   .no-spawn-text { color: var(--muted); font-size: 13px; padding-top: 10px; }
 
   footer {
-    padding: 20px;
+    padding: 24px 20px;
     text-align: center;
     color: var(--muted);
     font-size: 12px;
+  }
+
+  @media (max-width: 480px) {
+    header h1 { font-size: 22px; }
+    .mascot { font-size: 26px; top: 12px; right: 14px; }
   }
 </style>
 </head>
 <body>
 
 <header>
+  <span class="mascot" aria-hidden="true">📡</span>
   <h1>Server Pokedex</h1>
   <p>Search every Pokemon available on this server (Cobblemon + All The Mons x Mega Showdown) and where to find them.</p>
 </header>
@@ -333,7 +501,8 @@
 </div>
 
 <div class="count" id="count"></div>
-<div id="grid"></div>
+<div id="loading"><div class="pokeball-spin"></div><p>Loading the dex&hellip;</p></div>
+<div id="grid" style="display:none;"></div>
 
 <div id="overlay">
   <div class="sheet" id="sheet"></div>
@@ -365,6 +534,19 @@ function spriteUrl(p) {
 const SPRITE_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#9096a6" stroke-width="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke="#9096a6" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#16181d" stroke="#9096a6" stroke-width="1.5"/></svg>`
 );
+
+// Mirrors the .t-<type> colors in the CSS above, so cards/sheet can set a
+// matching --type-color / --screen-color inline style per Pokemon.
+const TYPE_COLORS = {
+  normal: '#A8A77A', fire: '#EE8130', water: '#6390F0', electric: '#F7D02C',
+  grass: '#7AC74C', ice: '#96D9D6', fighting: '#C22E28', poison: '#A33EA1',
+  ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A',
+  rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746',
+  steel: '#B7B7CE', fairy: '#D685AD',
+};
+function typeColor(p) {
+  return TYPE_COLORS[(p.types && p.types[0]) || 'normal'] || '#ffcb05';
+}
 
 // Maps each raw spawn-condition biome ref (e.g. "#cobblemon:is_end" or a
 // literal like "minecraft:frozen_river") to the real, concrete biome names
@@ -495,6 +677,8 @@ async function load() {
     biomeSelect.appendChild(opt);
   }
 
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('grid').style.display = '';
   render();
 }
 
@@ -525,6 +709,7 @@ function render() {
     const card = document.createElement('div');
     card.className = 'card';
     card.tabIndex = 0;
+    card.style.setProperty('--type-color', typeColor(p));
     card.innerHTML = `
       <div class="card-top">
         <div class="card-head">
@@ -634,8 +819,42 @@ function evolutionHtml(p) {
   `;
 }
 
+// Cancels any in-progress speech and speaks the given text aloud, toggling
+// a wiggling ".speaking" state on the button that triggered it (anime
+// Pokedex "read the entry aloud" flavor). Silently disables the button
+// instead of throwing if the browser has no speechSynthesis support.
+function speak(text, btn) {
+  if (!window.speechSynthesis) {
+    if (btn) { btn.disabled = true; btn.title = 'Read-aloud not supported in this browser'; }
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1.0;
+  utter.pitch = 1.05;
+  if (btn) {
+    btn.classList.add('speaking');
+    utter.onend = () => btn.classList.remove('speaking');
+    utter.onerror = () => btn.classList.remove('speaking');
+  }
+  window.speechSynthesis.speak(utter);
+}
+
+// The Rotom-Dex-style "flavor text" speech bubble, with a speaker button
+// that reads the entry aloud like the anime's Pokedex.
+function flavorHtml(p) {
+  if (!p.flavorText) return '';
+  return `
+    <div class="flavor-bubble">
+      <span class="flavor-text">${p.flavorText}</span>
+      <button type="button" class="speak-btn" aria-label="Read the Pokedex entry aloud" title="Read aloud">🔊</button>
+    </div>
+  `;
+}
+
 function openDetail(p) {
   const sheet = document.getElementById('sheet');
+  sheet.style.setProperty('--screen-color', typeColor(p));
   let spawnHtml;
   if (p.no_spawn) {
     spawnHtml = '<p class="no-spawn-text">Not currently obtainable through a wild spawn on this server. Ask staff if you are looking for this one.</p>';
@@ -679,18 +898,23 @@ function openDetail(p) {
   }
 
   sheet.innerHTML = `
-    <button class="sheet-close" aria-label="Close">&times;</button>
-    <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
-    <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
-    ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
-    <h2>${p.name}</h2>
-    <div class="types">
-      ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
+    <div class="sheet-screen">
+      <button class="sheet-close" aria-label="Close">&times;</button>
+      <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+      <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+      ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
+      <h2>${p.name}</h2>
+      <div class="types">
+        ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
+      </div>
     </div>
-    ${mechanicsHtml(p)}
-    ${evolutionHtml(p)}
-    <div style="margin-top:14px;">${spawnHtml}</div>
-    ${snackTipsHtml(p)}
+    <div class="sheet-body">
+      ${flavorHtml(p)}
+      ${mechanicsHtml(p)}
+      ${evolutionHtml(p)}
+      <div style="margin-top:14px;">${spawnHtml}</div>
+      ${snackTipsHtml(p)}
+    </div>
   `;
   sheet.querySelector('.sheet-close').addEventListener('click', closeDetail);
   sheet.querySelectorAll('.evo-name[data-goto]').forEach(el => {
@@ -699,11 +923,16 @@ function openDetail(p) {
       if (target) openDetail(target);
     });
   });
+  const speakBtn = sheet.querySelector('.speak-btn');
+  if (speakBtn) {
+    speakBtn.addEventListener('click', () => speak(p.flavorText, speakBtn));
+  }
   document.getElementById('overlay').classList.add('open');
 }
 
 function closeDetail() {
   document.getElementById('overlay').classList.remove('open');
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
 document.getElementById('overlay').addEventListener('click', e => {
