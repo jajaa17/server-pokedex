@@ -129,6 +129,36 @@
     font-size: 12px;
     color: #e0a45c;
   }
+  .form-badge {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #3a3040;
+    color: #c9a8f0;
+    vertical-align: middle;
+  }
+  .snack-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+  }
+  .snack-section h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .snack-row {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .snack-row .snack-name { color: var(--text); font-weight: 600; }
 
   /* Type colors, matching the standard Pokemon type palette */
   .t-normal   { background: #A8A77A; } .t-fire   { background: #EE8130; }
@@ -241,9 +271,15 @@ let DEX = [];
 
 // Sprite from the national dex number (all species on this server, including
 // the ATM x MSD additions, use real national dex numbers, so this works for
-// the whole list). Falls back to a pokeball placeholder if a sprite 404s.
+// the whole list). A regional-form entry (Alolan/Galarian/Hisuian/Paldean)
+// carries its own PokeAPI variety id in spriteId when one exists, so it
+// shows its own look instead of the base form's. A handful of Cobblemon's
+// invented "regional-bias" pre-evolution recolors (e.g. Hisuian Rowlet)
+// have no real PokeAPI variety, so those fall back to the base dex sprite.
+// Falls back to a pokeball placeholder if a sprite 404s.
 function spriteUrl(p) {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.dex}.png`;
+  const id = p.spriteId || p.dex;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
 }
 const SPRITE_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#9096a6" stroke-width="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke="#9096a6" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#16181d" stroke="#9096a6" stroke-width="1.5"/></svg>`
@@ -273,13 +309,17 @@ function biomeNames(p) {
   return set;
 }
 
+let SNACKS = null;
+
 async function load() {
-  const [dexRes, biomeRes] = await Promise.all([
+  const [dexRes, biomeRes, snackRes] = await Promise.all([
     fetch('pokedex.json'),
     fetch('biome_names.json'),
+    fetch('poke_snacks.json'),
   ]);
   DEX = await dexRes.json();
   BIOME_NAMES = await biomeRes.json();
+  SNACKS = await snackRes.json();
 
   const types = [...new Set(DEX.flatMap(p => p.types))].sort();
   const typeSelect = document.getElementById('type-filter');
@@ -337,6 +377,7 @@ function render() {
           <img class="sprite" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite" loading="lazy">
           <div>
             <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+            ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
             <div class="name" style="margin:2px 0 0;">${p.name}</div>
           </div>
         </div>
@@ -350,6 +391,46 @@ function render() {
     card.addEventListener('keypress', e => { if (e.key === 'Enter') openDetail(p); });
     grid.appendChild(card);
   }
+}
+
+const RARITY_ORDER = ['common', 'uncommon', 'rare', 'ultra-rare'];
+
+// Poke Snacks are cooked with a seasoning item, and whatever that
+// seasoning's own spawn_bait_effects are get attached to the finished
+// snack (data/cobblemon/spawn_bait_effects/**, see poke_snacks.json).
+// Type-seasoned snacks boost that type's spawn chance; the rarity
+// seasonings (Golden Apple family, Enchanted Golden Apple) boost the
+// chance of a rarer-tier spawn generally. Neither one targets an
+// individual species by name -- this just shows which seasonings are
+// relevant to a Pokemon given its own type(s) and rarity tier.
+function snackTipsHtml(p) {
+  if (!SNACKS || p.no_spawn) return '';
+
+  const typeRows = p.types
+    .map(t => SNACKS.type_seasoning[t])
+    .filter(Boolean)
+    .map(s => `<div class="snack-row">Season with <span class="snack-name">${s.name}</span></div>`)
+    .join('');
+
+  let rarityRow = '';
+  const buckets = new Set((p.spawns || []).map(s => s.bucket));
+  const highest = RARITY_ORDER.filter(b => buckets.has(b)).pop();
+  if (highest) {
+    const r = SNACKS.rarity_seasoning[highest];
+    if (r) {
+      rarityRow = `<div class="snack-row">Rarity tier is <b>${highest}</b> — a <span class="snack-name">${r.name}</span> seasoning gives a ${r.strength} boost toward rarer spawns in general</div>`;
+    }
+  }
+
+  if (!typeRows && !rarityRow) return '';
+
+  return `
+    <div class="snack-section">
+      <h4>Poke Snack tips</h4>
+      ${typeRows}
+      ${rarityRow}
+    </div>
+  `;
 }
 
 function openDetail(p) {
@@ -398,11 +479,13 @@ function openDetail(p) {
     <button class="sheet-close" aria-label="Close">&times;</button>
     <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
     <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+    ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
     <h2>${p.name}</h2>
     <div class="types">
       ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
     </div>
     <div style="margin-top:14px;">${spawnHtml}</div>
+    ${snackTipsHtml(p)}
   `;
   sheet.querySelector('.sheet-close').addEventListener('click', closeDetail);
   document.getElementById('overlay').classList.add('open');

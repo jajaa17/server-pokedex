@@ -1,0 +1,29 @@
+{
+  "_source": "Extracted directly from data/cobblemon/spawn_bait_effects/**/*.json in Cobblemon-neoforge-1.8.1+1.21.1.jar and data/cobblemon/recipe/campfire_pot/poke_snack.json. A Poke Snack is cooked from 3x Milk, Honey Bottle + Vivichoke + Honey Bottle, 3x Hearty Grains in a Cooking Pot (cobblemon:poke_snack recipe), then seasoned with one of the items below (seasoningTag cobblemon:recipe_filters/bait_seasoning, seasoningProcessors includes 'spawn_bait') to attach that item's spawn_bait_effects onto the finished snack.",
+  "type_seasoning": {
+    "normal": {"item": "cobblemon:chilan_berry", "name": "Chilan Berry"},
+    "fire": {"item": "cobblemon:occa_berry", "name": "Occa Berry"},
+    "water": {"item": "cobblemon:passho_berry", "name": "Passho Berry"},
+    "electric": {"item": "cobblemon:wacan_berry", "name": "Wacan Berry"},
+    "grass": {"item": "cobblemon:rindo_berry", "name": "Rindo Berry"},
+    "ice": {"item": "cobblemon:yache_berry", "name": "Yache Berry"},
+    "fighting": {"item": "cobblemon:chople_berry", "name": "Chople Berry"},
+    "poison": {"item": "cobblemon:kebia_berry", "name": "Kebia Berry"},
+    "ground": {"item": "cobblemon:shuca_berry", "name": "Shuca Berry"},
+    "flying": {"item": "cobblemon:coba_berry", "name": "Coba Berry"},
+    "psychic": {"item": "cobblemon:payapa_berry", "name": "Payapa Berry"},
+    "bug": {"item": "cobblemon:tanga_berry", "name": "Tanga Berry"},
+    "rock": {"item": "cobblemon:charti_berry", "name": "Charti Berry"},
+    "ghost": {"item": "cobblemon:kasib_berry", "name": "Kasib Berry"},
+    "dragon": {"item": "cobblemon:haban_berry", "name": "Haban Berry"},
+    "dark": {"item": "cobblemon:colbur_berry", "name": "Colbur Berry"},
+    "steel": {"item": "cobblemon:babiri_berry", "name": "Babiri Berry"},
+    "fairy": {"item": "cobblemon:roseli_berry", "name": "Roseli Berry"}
+  },
+  "rarity_seasoning": {
+    "common": null,
+    "uncommon": null,
+    "rare": {"item": "minecraft:golden_apple", "name": "Golden Apple (or Golden Carrot / Glistering Melon Slice)", "strength": "minor"},
+    "ultra-rare": {"item": "minecraft:enchanted_golden_apple", "name": "Enchanted Golden Apple", "strength": "major"}
+  }
+}
