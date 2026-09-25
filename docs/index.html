@@ -225,6 +225,23 @@
     color: var(--text);
   }
   .spawn-row .level { color: var(--muted); margin-top: 6px; }
+  .condition-line { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .condition-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(120, 160, 255, 0.14);
+    border: 1px solid rgba(120, 160, 255, 0.35);
+    color: #b9cdfd;
+  }
+  .bonus-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(120, 220, 140, 0.14);
+    border: 1px solid rgba(120, 220, 140, 0.35);
+    color: #a8e6b8;
+  }
   .no-spawn-text { color: var(--muted); font-size: 13px; padding-top: 10px; }
 
   footer {
@@ -307,6 +324,71 @@ function biomeNames(p) {
     for (const b of (s.biomes || [])) for (const name of namesForRef(b)) set.add(name);
   }
   return set;
+}
+
+// Turns a raw block/structure id or tag (e.g. "#minecraft:village",
+// "cobblemon:apricorn_tree", "minecraft:snow_block") into something
+// readable ("Village", "Apricorn Tree", "Snow Block").
+function prettyId(id) {
+  let s = String(id);
+  if (s.startsWith('#')) s = s.slice(1);
+  s = s.split(':').pop();
+  s = s.replace(/[_/]/g, ' ');
+  return s.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+const MOON_PHASE_NAMES = {
+  '0': 'Full Moon', '1': 'Waning Gibbous', '2': 'Last Quarter',
+  '3': 'Waning Crescent', '4': 'New Moon', '5': 'Waxing Crescent',
+  '6': 'First Quarter', '7': 'Waxing Gibbous',
+};
+function moonPhaseLabel(v) {
+  return String(v).split(',').map(s => s.trim())
+    .map(p => MOON_PHASE_NAMES[p] || `Phase ${p}`).join(' or ');
+}
+
+// Turns a spawn-condition object (or its "not" counterpart) into an array
+// of short human-readable labels, e.g. "Night only", "Raining", "Y >= 100".
+function conditionLabels(cond, negate) {
+  if (!cond) return [];
+  const pfx = negate ? 'Not: ' : '';
+  const out = [];
+  if (cond.timeRange) out.push(`${pfx}${cond.timeRange.charAt(0).toUpperCase()}${cond.timeRange.slice(1)} only`);
+  if (cond.moonPhase !== undefined) out.push(`${pfx}Moon: ${moonPhaseLabel(cond.moonPhase)}`);
+  if (cond.isRaining !== undefined) out.push(`${pfx}${cond.isRaining ? 'Raining' : 'Not raining'}`);
+  if (cond.isThundering !== undefined) out.push(`${pfx}${cond.isThundering ? 'Thunderstorm' : 'No thunderstorm'}`);
+  if (cond.canSeeSky !== undefined) out.push(`${pfx}${cond.canSeeSky ? 'Open sky (not indoors/caves)' : 'No sky view (indoors/caves)'}`);
+  if (cond.minY !== undefined && cond.maxY !== undefined) out.push(`${pfx}Y ${cond.minY} to ${cond.maxY}`);
+  else if (cond.minY !== undefined) out.push(`${pfx}Y ${cond.minY}+`);
+  else if (cond.maxY !== undefined) out.push(`${pfx}Y below ${cond.maxY}`);
+  if (cond.minSkyLight !== undefined && cond.maxSkyLight !== undefined) out.push(`${pfx}Sky light ${cond.minSkyLight}-${cond.maxSkyLight}`);
+  else if (cond.minSkyLight !== undefined) out.push(`${pfx}Sky light ${cond.minSkyLight}+`);
+  else if (cond.maxSkyLight !== undefined) out.push(`${pfx}Sky light below ${cond.maxSkyLight}`);
+  if (cond.isSlimeChunk !== undefined) out.push(`${pfx}${cond.isSlimeChunk ? 'Slime chunk' : 'Not a slime chunk'}`);
+  if (cond.neededNearbyBlocks && cond.neededNearbyBlocks.length) out.push(`${pfx}Near: ${cond.neededNearbyBlocks.map(prettyId).join(', ')}`);
+  if (cond.neededBaseBlocks && cond.neededBaseBlocks.length) out.push(`${pfx}Standing on: ${cond.neededBaseBlocks.map(prettyId).join(', ')}`);
+  if (cond.structures && cond.structures.length) out.push(`${pfx}Near structure: ${cond.structures.map(prettyId).join(', ')}`);
+  return out;
+}
+
+// Renders the full condition line (hard requirements + "not" exclusions +
+// weight-multiplier "spawns more often when X" bonuses) for one spawn row.
+function conditionHtml(s) {
+  const cond = s.conditions;
+  if (!cond) return '';
+  const labels = [...conditionLabels(cond, false), ...conditionLabels(cond.not, true)];
+  const bonusLabels = (cond.bonus || []).map(b => {
+    const { multiplier, ...rest } = b;
+    const parts = conditionLabels(rest, false).map(p => p.replace(/ only$/, ''));
+    return `${multiplier}x chance${parts.length ? ' when ' + parts.join(', ').toLowerCase() : ''}`;
+  });
+  if (!labels.length && !bonusLabels.length) return '';
+  return `
+    <div class="condition-line">
+      ${labels.map(l => `<span class="condition-badge">${l}</span>`).join('')}
+      ${bonusLabels.map(l => `<span class="bonus-badge">${l}</span>`).join('')}
+    </div>
+  `;
 }
 
 let SNACKS = null;
@@ -454,6 +536,7 @@ function openDetail(p) {
           level: s.level,
           biomes: [...names].sort(),
           hadBiomes: (s.biomes || []).length > 0,
+          conditions: s.conditions,
         };
       })
       .filter(s => !s.hadBiomes || s.biomes.length > 0);
@@ -470,6 +553,7 @@ function openDetail(p) {
               : '<span class="biome-badge">Any biome</span>'
           }</div>
           ${s.level ? `<div class="level">Level ${s.level[0]}-${s.level[1]}</div>` : ''}
+          ${conditionHtml(s)}
         </div>
       `).join('');
     }
