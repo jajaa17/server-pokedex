@@ -47,6 +47,8 @@
     --biome-bg: #eaf6ea; --biome-border: #cde8cd; --biome-text: #2f7a3d;
     --cond-bg: #eaf1ff; --cond-border: #c8d9fb; --cond-text: #2f5ac9;
     --bonus-bg: #eafff0; --bonus-border: #bdeecb; --bonus-text: #1f8a49;
+    --mega-bg: #f5f0ff; --mega-border: #ddccff; --mega-text: #6b3fc9;
+    --mega-tag-canon: #6b3fc9; --mega-tag-bonus: #a97a1f; --mega-tag-za: #c9307a;
   }
   :root[data-theme="dark"] {
     --bg-a: #1b1d24;
@@ -75,6 +77,8 @@
     --biome-bg: #17331e; --biome-border: #235030; --biome-text: #6fd98a;
     --cond-bg: #182a4a; --cond-border: #234066; --cond-text: #7fabff;
     --bonus-bg: #17331f; --bonus-border: #235030; --bonus-text: #5fd98a;
+    --mega-bg: #241c38; --mega-border: #3f2d63; --mega-text: #c3a8ff;
+    --mega-tag-canon: #c3a8ff; --mega-tag-bonus: #e0b45a; --mega-tag-za: #ff8fc0;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -197,6 +201,245 @@
   input[type="search"] { flex: 1 1 220px; min-width: 160px; }
   select { flex: 0 0 auto; cursor: pointer; }
   input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(238,21,21,0.15); }
+
+  /* Top-level Pokedex / Guides switcher */
+  .main-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 14px 20px 0;
+    flex-wrap: wrap;
+  }
+  .main-nav-btn {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    color: var(--muted);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--body);
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+  }
+  .main-nav-btn:hover { border-color: var(--accent); }
+  .main-nav-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Guide sub-tabs + content */
+  .guide-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+  }
+  .guide-tab-btn {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--body);
+    cursor: pointer;
+  }
+  .guide-tab-btn:hover { border-color: var(--accent); }
+  .guide-tab-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .guide-content {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+    animation: popIn 0.2s ease both;
+  }
+  .guide-content h2 {
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .guide-content > .guide-intro {
+    color: var(--muted);
+    font-size: 13.5px;
+    margin: 0 0 18px;
+    line-height: 1.6;
+  }
+  .guide-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04), 0 6px 14px rgba(60,50,20,0.06);
+  }
+  .guide-card h3 {
+    margin: 0 0 10px;
+    font-size: 15px;
+  }
+  .guide-card h4 {
+    margin: 14px 0 6px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .guide-card p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; }
+  .guide-card p:last-child { margin-bottom: 0; }
+  .guide-card ul, .guide-card ol { margin: 0 0 10px; padding-left: 20px; font-size: 13.5px; line-height: 1.65; }
+  .guide-card ul:last-child, .guide-card ol:last-child { margin-bottom: 0; }
+  .guide-card li { margin-bottom: 4px; }
+  .guide-note {
+    font-size: 12.5px;
+    color: var(--muted);
+    background: var(--panel-2);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    line-height: 1.55;
+  }
+  .guide-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 4px 0 10px; }
+  .guide-table th, .guide-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .guide-table th { color: var(--muted); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.03em; }
+  .guide-table tr:last-child td { border-bottom: none; }
+  .guide-pill {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--cond-bg);
+    color: var(--cond-text);
+    margin-right: 4px;
+  }
+
+  /* ---- Team Builder ---- */
+  .team-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 20px;
+  }
+  .team-toolbar-left { color: var(--muted); font-size: 13px; font-weight: 700; }
+  .team-toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tb-btn {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--body);
+    cursor: pointer;
+  }
+  .tb-btn:hover { border-color: var(--accent); }
+  .tb-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .team-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 0 20px 60px;
+  }
+  .team-slot {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04), 0 6px 14px rgba(60,50,20,0.06);
+  }
+  .team-slot-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 160px;
+    color: var(--muted);
+  }
+  .team-slot-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .team-slot-sprite {
+    width: 48px; height: 48px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    background: var(--panel-2);
+    border-radius: 10px;
+    flex: 0 0 auto;
+  }
+  .team-slot-name { font-weight: 800; font-family: var(--head); font-size: 15px; flex: 1 1 auto; min-width: 0; }
+  .team-slot-remove {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+  .team-slot-remove:hover { color: var(--accent); }
+  .tb-field { margin-bottom: 10px; }
+  .tb-field label {
+    display: block;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .tb-field input[type="text"], .tb-field input[type="search"], .tb-field select {
+    width: 100%;
+    background: var(--panel-2);
+    border: 2px solid var(--line);
+    color: var(--text);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--body);
+    font-weight: 600;
+  }
+  .tb-row { display: flex; gap: 8px; }
+  .tb-row .tb-field { flex: 1 1 0; min-width: 0; }
+  .tb-ev-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .tb-ev-row .tb-field label { text-align: center; }
+  .tb-ev-row input, .tb-iv-row input {
+    width: 100%;
+    text-align: center;
+    background: var(--panel-2);
+    border: 2px solid var(--line);
+    color: var(--text);
+    padding: 6px 2px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-family: var(--mono);
+  }
+  .tb-iv-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .tb-ev-total { font-size: 11.5px; color: var(--muted); margin-top: 4px; text-align: right; }
+  .tb-ev-total.over { color: var(--accent); font-weight: 700; }
+  .tb-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .team-export-panel {
+    max-width: 700px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+  }
+  .team-export-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .team-export-header h3 { margin: 0; flex: 1 1 auto; font-size: 16px; }
+  #team-export-text {
+    width: 100%;
+    min-height: 260px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    line-height: 1.6;
+    resize: vertical;
+  }
 
   .count {
     padding: 10px 20px 4px;
@@ -363,6 +606,47 @@
   }
   .mechanics-note:last-child { margin-bottom: 0; }
 
+  .mega-section {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--mega-bg);
+    border: 1px solid var(--mega-border);
+  }
+  .mega-section h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--mega-text);
+  }
+  .mega-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .mega-row:last-child { margin-bottom: 0; }
+  .mega-item { font-weight: 700; color: var(--text); }
+  .mega-form { color: var(--muted); font-size: 12px; }
+  .mega-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 1px 7px;
+    border-radius: 999px;
+    color: #fff;
+  }
+  .mega-tag.canon { background: var(--mega-tag-canon); }
+  .mega-tag.bonus { background: var(--mega-tag-bonus); }
+  .mega-tag.za { background: var(--mega-tag-za); }
+  .mega-ingredients { flex-basis: 100%; font-size: 11.5px; color: var(--muted); }
+  .mega-row-note { flex-basis: 100%; font-size: 11.5px; color: var(--mega-text); }
+  .mega-note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
   .evo-section { margin-top: 14px; }
   .evo-section h4 {
     margin: 0 0 8px;
@@ -371,34 +655,36 @@
     letter-spacing: 0.03em;
     color: var(--muted);
   }
-  .evo-row {
+
+  /* Full evolution-family tree: one row per stage, indented per depth so
+     branches (Eevee, Tyrogue, Poliwhirl, etc) read as a simple outline. */
+  .evo-tree-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 4px;
+    gap: 8px;
+    padding: 6px 4px;
     border-radius: 10px;
   }
-  .evo-row:hover { background: var(--panel-2); }
-  .evo-sprite {
-    width: 40px;
-    height: 40px;
+  .evo-tree-row.current { background: var(--panel-2); box-shadow: inset 0 0 0 2px var(--accent); }
+  .evo-tree-arrow { color: var(--muted); flex: 0 0 auto; font-size: 13px; }
+  .evo-tree-sprite {
+    width: 34px;
+    height: 34px;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     flex: 0 0 auto;
     background: var(--panel-2);
-    border-radius: 10px;
+    border-radius: 8px;
   }
-  .evo-arrow { color: var(--accent); font-weight: 700; flex: 0 0 auto; }
-  .evo-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .evo-name {
+  .evo-tree-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .evo-tree-name {
     font-size: 13px;
     font-weight: 700;
     color: var(--text);
-    text-decoration: none;
     cursor: pointer;
   }
-  .evo-name:hover { color: var(--accent); }
-  .evo-desc { font-size: 12px; color: var(--muted); }
+  .evo-tree-name:hover { color: var(--accent); }
+  .evo-tree-desc { font-size: 11.5px; color: var(--muted); }
 
   /* Type colors, matching the standard Pokemon type palette */
   .t-normal   { background: #A8A77A; } .t-fire   { background: #EE8130; }
@@ -538,7 +824,10 @@
     text-align: center;
     color: var(--muted);
     font-size: 12px;
+    line-height: 1.8;
   }
+  footer a { color: var(--blue); font-weight: 700; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
 
   @media (max-width: 480px) {
     header h1 { font-size: 22px; }
@@ -554,34 +843,74 @@
   <p>Search every Pokemon available on this server (Cobblemon + All The Mons x Mega Showdown) and where to find them.</p>
 </header>
 
-<div class="controls">
-  <input type="search" id="search" placeholder="Search by name or dex number..." autocomplete="off">
-  <select id="type-filter">
-    <option value="">All types</option>
-  </select>
-  <select id="biome-filter">
-    <option value="">All biomes</option>
-  </select>
-  <select id="sort">
-    <option value="dex">Sort: Dex number</option>
-    <option value="name">Sort: Name (A-Z)</option>
-    <option value="type">Sort: Primary type</option>
-  </select>
-  <select id="voice-select" aria-label="Read-aloud voice">
-    <option value="">Dex voice: Default</option>
-  </select>
+<div class="main-nav">
+  <button type="button" class="main-nav-btn active" id="nav-dex" data-view="dex">📖 Pokedex</button>
+  <button type="button" class="main-nav-btn" id="nav-guides" data-view="guides">📚 Guides</button>
+  <button type="button" class="main-nav-btn" id="nav-team" data-view="team">🛠️ Team Builder</button>
   <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
 </div>
 
-<div class="count" id="count"></div>
-<div id="loading"><div class="pokeball-spin"></div><p>Loading the dex&hellip;</p></div>
-<div id="grid" style="display:none;"></div>
+<div id="dex-view">
+  <div class="controls">
+    <input type="search" id="search" placeholder="Search by name or dex number..." autocomplete="off">
+    <select id="type-filter">
+      <option value="">All types</option>
+    </select>
+    <select id="biome-filter">
+      <option value="">All biomes</option>
+    </select>
+    <select id="sort">
+      <option value="dex">Sort: Dex number</option>
+      <option value="name">Sort: Name (A-Z)</option>
+      <option value="type">Sort: Primary type</option>
+    </select>
+    <select id="voice-select" aria-label="Read-aloud voice">
+      <option value="">Dex voice: Default</option>
+    </select>
+  </div>
+
+  <div class="count" id="count"></div>
+  <div id="loading"><div class="pokeball-spin"></div><p>Loading the dex&hellip;</p></div>
+  <div id="grid" style="display:none;"></div>
+</div>
+
+<div id="guides-view" style="display:none;">
+  <div class="guide-tabs">
+    <button type="button" class="guide-tab-btn active" data-guide="catching">🎯 Catching Guide</button>
+    <button type="button" class="guide-tab-btn" data-guide="training">💪 EV &amp; IV Training</button>
+    <button type="button" class="guide-tab-btn" data-guide="battling">⚔️ Battling &amp; PvP</button>
+    <button type="button" class="guide-tab-btn" data-guide="mega">💎 Mega Evolution</button>
+  </div>
+  <div id="guide-content" class="guide-content"></div>
+</div>
+
+<div id="team-view" style="display:none;">
+  <div class="team-toolbar">
+    <div class="team-toolbar-left">
+      <span id="team-status">Building your team&hellip;</span>
+    </div>
+    <div class="team-toolbar-right">
+      <button type="button" class="tb-btn" id="team-clear">Clear team</button>
+      <button type="button" class="tb-btn tb-btn-primary" id="team-export">Export to Showdown format</button>
+    </div>
+  </div>
+  <div id="team-loading" class="guide-content"><p>Loading move/ability/item data&hellip; this is a one-time ~500KB download.</p></div>
+  <div id="team-slots" class="team-slots"></div>
+  <div id="team-export-panel" class="team-export-panel" style="display:none;">
+    <div class="team-export-header">
+      <h3>Showdown-format export</h3>
+      <button type="button" class="tb-btn" id="team-export-copy">Copy</button>
+      <button type="button" class="tb-btn" id="team-export-close">Close</button>
+    </div>
+    <textarea id="team-export-text" readonly></textarea>
+  </div>
+</div>
 
 <div id="overlay">
   <div class="sheet" id="sheet"></div>
 </div>
 
-<footer>Data pulled from the server's Cobblemon and All The Mons x Mega Showdown files. Spawn odds and biomes can change when the mods update.</footer>
+<footer>Data pulled from the server's Cobblemon and All The Mons x Mega Showdown files. Spawn odds and biomes can change when the mods update.<br>Also into Arma 3? Join the Philippine Joint Strike Force: <a href="https://discord.gg/armaph" target="_blank" rel="noopener">discord.gg/armaph</a></footer>
 
 <script>
 let DEX = [];
@@ -712,15 +1041,19 @@ function conditionHtml(s) {
 
 let SNACKS = null;
 
+let MEGA_GENERAL = null;
+
 async function load() {
-  const [dexRes, biomeRes, snackRes] = await Promise.all([
+  const [dexRes, biomeRes, snackRes, megaGeneralRes] = await Promise.all([
     fetch('pokedex.json'),
     fetch('biome_names.json'),
     fetch('poke_snacks.json'),
+    fetch('mega_general.json').catch(() => null),
   ]);
   DEX = await dexRes.json();
   BIOME_NAMES = await biomeRes.json();
   SNACKS = await snackRes.json();
+  if (megaGeneralRes && megaGeneralRes.ok) MEGA_GENERAL = await megaGeneralRes.json();
 
   DEX_BY_ID = Object.fromEntries(DEX.map(p => [p.id, p]));
   EVOLVES_FROM = {};
@@ -858,36 +1191,106 @@ function mechanicsHtml(p) {
   `;
 }
 
-// One evolution-chain row: a small sprite, the Pokemon's name (clickable,
-// jumps the sheet to that entry), and the plain-English requirement text.
-function evoRow(dexId, description, direction) {
-  const target = DEX_BY_ID[dexId];
-  if (!target) return '';
-  const arrow = direction === 'from' ? '←' : '→';
+const MEGA_TAG_LABELS = { canon: 'Mega Showdown', bonus: "Champion's Stone", za: 'Z-A Pack' };
+
+// Mega Evolution data pulled straight from the server's Mega Showdown mod
+// (its standard roster, plus its own extra "Champion's Stone" megas) and
+// the separately-added zamega addon jar (a further "Z-A Pack" lineup:
+// Magearna, Zygarde, Heatran, Darkrai, Zeraora, Tatsugiri, plus Floette's
+// non-stone Ange transformation). Mega Evolving always needs the same two
+// things: the matching Mega Stone held by the Pokemon, and a Key Stone
+// accessory (a Mega Bracelet/Ring or one of its reskins) worn by the
+// trainer -- see build_megas.py for exactly how this was extracted from
+// the mod jars. The tag just says which mod/roster an entry comes from,
+// not whether it matches the real Pokemon games -- check the mod's own
+// pages for that.
+function megaHtml(p) {
+  if (!p.megaEvolutions || !p.megaEvolutions.length) return '';
+  const rows = p.megaEvolutions.map(m => `
+    <div class="mega-row">
+      <span class="mega-tag ${m.category}">${MEGA_TAG_LABELS[m.category] || m.category}</span>
+      <span class="mega-item">${m.item}</span>
+      <span class="mega-form">&rarr; ${m.form}</span>
+      ${m.ingredients && m.ingredients.length ? `<span class="mega-ingredients">Crafted from: ${m.ingredients.join(', ')}</span>` : ''}
+      ${m.note ? `<span class="mega-row-note">${m.note}</span>` : ''}
+    </div>
+  `).join('');
   return `
-    <div class="evo-row">
-      ${direction === 'to' ? `<span class="evo-arrow">${arrow}</span>` : ''}
-      <img class="evo-sprite" src="${spriteUrl(target)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${target.name} sprite">
-      <div class="evo-info">
-        <span class="evo-name" data-goto="${target.id}">${target.name}${target.regionalForm ? ` (${target.regionalForm})` : ''}</span>
-        <span class="evo-desc">${description}</span>
-      </div>
-      ${direction === 'from' ? `<span class="evo-arrow">${arrow}</span>` : ''}
+    <div class="mega-section">
+      <h4>Mega Evolution</h4>
+      ${rows}
+      <p class="mega-note">Hold the matching Mega Stone on this Pokemon and have a Key Stone (a Mega Bracelet/Ring or one of its themed variants) equipped to Mega Evolve it in battle. Most Mega Stones are crafted from a blank Mega Stone plus themed ingredients (shown above); a blank Mega Stone itself comes from mining Mega Stone Crystal in the mod's own structure. See the Guides tab for the full Key Stone/bracelet crafting chain.</p>
     </div>
   `;
 }
 
+// Walks EVOLVES_FROM backward from any stage to find its family's earliest
+// (basic-stage) ancestor, so the tree always starts from the root no
+// matter which stage's page you're looking at.
+function findEvoRoot(id) {
+  const seen = new Set();
+  let cur = id;
+  while (!seen.has(cur)) {
+    seen.add(cur);
+    const preds = EVOLVES_FROM[cur];
+    if (!preds || !preds.length) return cur;
+    cur = preds[0].from;
+  }
+  return cur; // guards against a malformed cycle in the data
+}
+
+// Recursively builds the whole evolution family from a root id, following
+// every evolvesTo branch (covers Eevee's 8-way split, Tyrogue's 3-way
+// split, Poliwhirl's Poliwrath/Politoed split, etc), not just one step.
+function buildEvoTree(id, seen) {
+  const p = DEX_BY_ID[id];
+  if (!p || seen.has(id)) return null;
+  seen.add(id);
+  const children = [];
+  for (const evo of (p.evolvesTo || [])) {
+    const child = buildEvoTree(evo.to, seen);
+    if (child) {
+      child.incomingDesc = evo.description;
+      children.push(child);
+    }
+  }
+  return { id, name: p.name, regionalForm: p.regionalForm, incomingDesc: null, children };
+}
+
+function flattenEvoTree(node, depth, out) {
+  out.push({ id: node.id, name: node.name, regionalForm: node.regionalForm, incomingDesc: node.incomingDesc, depth });
+  for (const child of node.children) flattenEvoTree(child, depth + 1, out);
+}
+
+// The whole evolution family, shown as an indented outline (basic stage at
+// the top, each branch indented under the stage it evolves from) with the
+// currently-viewed Pokemon highlighted, so every stage's page shows the
+// same complete chain instead of just its immediate neighbors.
 function evolutionHtml(p) {
-  const before = EVOLVES_FROM[p.id] || [];
-  const after = p.evolvesTo || [];
-  if (!before.length && !after.length) return '';
-  const beforeHtml = before.map(e => evoRow(e.from, e.description, 'from')).join('');
-  const afterHtml = after.map(e => evoRow(e.to, e.description, 'to')).join('');
+  const rootId = findEvoRoot(p.id);
+  const tree = buildEvoTree(rootId, new Set());
+  if (!tree) return '';
+  const flat = [];
+  flattenEvoTree(tree, 0, flat);
+  if (flat.length <= 1) return '';
+
+  const rows = flat.map(n => {
+    const target = DEX_BY_ID[n.id];
+    return `
+      <div class="evo-tree-row${n.id === p.id ? ' current' : ''}" style="margin-left:${n.depth * 18}px;">
+        ${n.depth > 0 ? '<span class="evo-tree-arrow">&#8618;</span>' : ''}
+        <img class="evo-tree-sprite" src="${spriteUrl(target)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${n.name} sprite">
+        <div class="evo-tree-info">
+          <span class="evo-tree-name" data-goto="${n.id}">${n.name}${n.regionalForm ? ` (${n.regionalForm})` : ''}</span>
+          ${n.incomingDesc ? `<span class="evo-tree-desc">${n.incomingDesc}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
   return `
     <div class="evo-section">
-      <h4>Evolution</h4>
-      ${beforeHtml}
-      ${afterHtml}
+      <h4>Evolution chain</h4>
+      ${rows}
     </div>
   `;
 }
@@ -1044,13 +1447,14 @@ function openDetail(p) {
     <div class="sheet-body">
       ${flavorHtml(p)}
       ${mechanicsHtml(p)}
+      ${megaHtml(p)}
       ${evolutionHtml(p)}
       <div style="margin-top:14px;">${spawnHtml}</div>
       ${snackTipsHtml(p)}
     </div>
   `;
   sheet.querySelector('.sheet-close').addEventListener('click', closeDetail);
-  sheet.querySelectorAll('.evo-name[data-goto]').forEach(el => {
+  sheet.querySelectorAll('.evo-tree-name[data-goto]').forEach(el => {
     el.addEventListener('click', () => {
       const target = DEX_BY_ID[el.getAttribute('data-goto')];
       if (target) openDetail(target);
@@ -1067,6 +1471,611 @@ function closeDetail() {
   document.getElementById('overlay').classList.remove('open');
   if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
+
+// ============================================================
+// Guides: Catching, EV/IV Training, Battling & PvP, Mega Evolution.
+// Static reference content (not per-species data), researched against
+// Cobblemon's own wiki (wiki.cobblemon.com) and the mod's own recipe/loot
+// data pulled earlier for the Mega Evolution tab. Anything with numbers
+// that Cobblemon's own community hasn't fully pinned down (shiny-odds
+// boosts) is flagged as an estimate rather than stated as exact.
+// ============================================================
+
+function megaGeneralHtml() {
+  if (!MEGA_GENERAL) return '<p>Loading&hellip;</p>';
+  const stepsHtml = MEGA_GENERAL.steps.map(s => `
+    <li><b>${s.result}</b>${s.ingredients.length ? ` &mdash; ${s.ingredients.join(', ')}` : ''}${s.note ? `<br><span class="guide-note" style="margin-top:4px;display:block;">${s.note}</span>` : ''}</li>
+  `).join('');
+  const variantRows = MEGA_GENERAL.bracelet_variants.map(v => `
+    <tr><td>${v.result}</td><td>${v.ingredients.join(', ')}</td></tr>
+  `).join('');
+  return `
+    <div class="guide-card">
+      <h3>1. Get one Key Stone item (only once, ever)</h3>
+      <p>${MEGA_GENERAL._note}</p>
+      <ol>${stepsHtml}</ol>
+      <h4>Bracelet/Ring variants (pick any one)</h4>
+      <table class="guide-table">
+        <tr><th>Item</th><th>Crafted from</th></tr>
+        ${variantRows}
+      </table>
+      <p class="guide-note">All variants do the exact same job &mdash; they're cosmetic reskins (Mega Ring, Mega Bracelet, the colored bracelets, May's Bracelet). Craft or find whichever one you like the look of.</p>
+    </div>
+    <div class="guide-card">
+      <h3>2. Get the right Mega Stone for your Pokemon</h3>
+      <p>Every mega-capable Pokemon needs its own specific Mega Stone held in battle. Open that Pokemon's own dex entry on this site &mdash; its "Mega Evolution" section lists the exact stone, what it's crafted from, and whether it's from the base Mega Showdown roster, a bonus "Champion's Stone" variant, or the separate Legends Z-A pack (zamega addon).</p>
+      <p>Every species-specific stone recipe starts from a blank <b>Mega Stone</b>, which comes from mining Mega Stone Crystal in the mod's own dedicated structure (look for the "Find the Mega structure" advancement as a hint).</p>
+      <div>
+        <span class="guide-pill" style="background:var(--mega-tag-canon);color:#fff;">Mega Showdown</span> the mod's main 86-species roster (Charizardite X/Y, Mewtwonite X/Y, etc.)
+      </div>
+      <div style="margin-top:4px;">
+        <span class="guide-pill" style="background:var(--mega-tag-bonus);color:#fff;">Champion's Stone</span> extra community-made "Z" variants (Absol, Garchomp, Lucario) &mdash; not from the main game series, and no crafting recipe was found for these, so they're likely admin/event-only on this server
+      </div>
+      <div style="margin-top:4px;">
+        <span class="guide-pill" style="background:var(--mega-tag-za);color:#fff;">Z-A Pack</span> the separate zamega addon jar's Legends Z-A-style megas (Magearna, Zygarde, Heatran, Darkrai, Zeraora, Tatsugiri) plus Floette's unique non-stone "Ange" transformation
+      </div>
+    </div>
+    <div class="guide-card">
+      <h3>3. Mega Evolve in battle</h3>
+      <p>With the Key Stone item equipped as an accessory and your Pokemon holding its matching Mega Stone, use the Mega Evolve option in battle (bound to a keybind client-side, default listed in-game as "Mega Evolve"). It reverts back to normal at the end of the battle.</p>
+    </div>
+  `;
+}
+
+const GUIDES = {
+  catching: {
+    title: 'Catching Guide',
+    html: `
+      <h2>Catching Guide</h2>
+      <p class="guide-intro">How catch odds actually work in Cobblemon, a cheat-sheet for every ball on this server, and how to find the rare stuff (Alphas, shinies, and the special spawn-triggering items).</p>
+
+      <div class="guide-card">
+        <h3>The basics</h3>
+        <p>Just like the mainline games, your odds to catch improve the lower the target's current HP is and if it has a status condition (asleep/frozen give the biggest boost; paralyze/poison/burn help less). On top of that base chance, whichever Poke Ball you throw applies its own multiplier &mdash; that's the part you actually control, so picking the right ball matters a lot.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Poke Ball cheat sheet</h3>
+        <table class="guide-table">
+          <tr><th>Ball</th><th>Multiplier / condition</th></tr>
+          <tr><td>Poke Ball, Heal Ball, Premier Ball, and the colored apricorn basics (Citrine, Verdant, Azure, Roseate, Slate)</td><td>1x (baseline)</td></tr>
+          <tr><td>Great Ball</td><td>1.5x</td></tr>
+          <tr><td>Ultra Ball</td><td>2x flat, always &mdash; it does <b>not</b> scale with turns (that's Timer Ball, below)</td></tr>
+          <tr><td>Quick Ball</td><td><b>5x, but only on turn 1 of the battle.</b> After turn 1 it's no better than a regular Poke Ball, so throw it immediately or not at all.</td></tr>
+          <tr><td>Timer Ball</td><td>Starts weak and climbs roughly +0.3x per turn that passes, capping around 4x -- so it's at its best in a battle you've dragged out for ~10+ turns, not turn 1.</td></tr>
+          <tr><td>Dusk Ball</td><td>3.5x in total darkness (light level 0), 3x at light level 1-7</td></tr>
+          <tr><td>Net Ball</td><td>3x on Bug or Water type targets</td></tr>
+          <tr><td>Dive Ball</td><td>3.5x on a target that's submerged underwater</td></tr>
+          <tr><td>Dream Ball</td><td>4x on a sleeping target</td></tr>
+          <tr><td>Repeat Ball</td><td>3.5x if you've already registered that species as caught in your dex</td></tr>
+          <tr><td>Beast Ball</td><td>5x on Ultra Beasts, only 0.1x on anything else &mdash; don't use it on normal Pokemon</td></tr>
+          <tr><td>Love Ball</td><td>8x on the opposite gender of the same species as your lead Pokemon, 2.5x on a different species</td></tr>
+          <tr><td>Fast Ball</td><td>4x on a target with 100+ base Speed</td></tr>
+          <tr><td>Heavy Ball / Level Ball / Moon Ball</td><td>Scale from 1x up to 4x based on target weight / your party's level advantage / moon phase (night only for Moon Ball)</td></tr>
+          <tr><td>Lure Ball</td><td>4x on a Pokemon hooked with a Poke Rod</td></tr>
+          <tr><td>Friend Ball</td><td>1x catch, but the caught Pokemon starts at 150 friendship</td></tr>
+          <tr><td>Luxury Ball</td><td>1x catch, faster friendship gain afterward</td></tr>
+          <tr><td>Safari Ball</td><td>1.5x, only outside of battle</td></tr>
+          <tr><td>Park Ball</td><td>2.5x in a Forest or Plains biome</td></tr>
+          <tr><td>Master Ball</td><td>Guaranteed catch, but not obtainable in normal survival play</td></tr>
+        </table>
+        <p class="guide-note">So: for a normal catch, Ultra Ball is your reliable everyday option. Quick Ball only pays off if you throw it the instant the battle starts. Timer Ball rewards stalling the fight out first.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Ancient Poke Balls</h3>
+        <p>The Ancient variants (crafted from Tumblestones + colored apricorns + metal ingots instead of plastic/apricorns) are purely a cosmetic reskin &mdash; they jump once instead of shaking three times, and have their own sound/particle effects, but catch exactly like their modern equivalent at the same tier: 1x for the basic tier, 1.5x for the Great Ball-tier ones, 2x for the Ultra Ball-tier ones. The one exception is the <b>Ancient Origin Ball</b>, which functions like a Master Ball (100% catch) and is reserved for server events rather than normal survival.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Poke Snacks</h3>
+        <p>Cooked at a Campfire Pot with a seasoning ingredient, then placed in the world to attract Pokemon. A type-matched seasoning boosts the spawn chance for Pokemon of that type; a rarity seasoning (the Golden Apple family) boosts the chance of a rarer-tier spawn in general. Check any Pokemon's own dex page here for the specific seasoning that helps with it.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Alpha Pokemon</h3>
+        <p>Alphas are unmistakable in the wild: noticeably bigger (roughly +33% to +85% size depending on the species), with glowing red eyes and a deeper, pitched-down cry. In battle they get a stat boost (1 guaranteed stat boost stage, plus 1 more for every 10 levels the alpha is).</p>
+        <ul>
+          <li><b>Catch it</b> and it joins your team, keeping its alpha status (glowing eyes toggleable via its Mark).</li>
+          <li><b>Defeat it instead</b> and you get bonus rewards &mdash; Exp Candy, IV Candy, Type Gems, and type-matched berries, better the higher level the alpha was.</li>
+        </ul>
+        <p>They can spawn naturally anywhere (rare), or you can hunt for one: fishing and Poke Snacks each give roughly a 1-in-100 chance per encounter, fossils roughly 1-in-20, and seasoning a snack with a Hopo Berry adds about +2% on top.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Shiny hunting</h3>
+        <p>Base odds are 1 in 4096 for any wild encounter, matching the mainline games. Community-estimated (not officially pinned-down) ways to improve that:</p>
+        <ul>
+          <li><b>Type-matched Poke Snacks</b> &mdash; roughly 2x, and generally considered the most practical method for wild hunting.</li>
+          <li><b>Catch Combo</b> &mdash; repeatedly catching the same species without catching anything else or letting one flee builds a combo, up to roughly 4x around a 50+ streak. Breaking the combo resets it.</li>
+          <li><b>Cross-language breeding</b> ("Masuda method") &mdash; breeding two Pokemon whose game language differs, roughly 6x.</li>
+          <li><b>Shiny Charm</b> &mdash; unlocked by completing the dex, roughly an extra 3x, and stacks permanently with everything else.</li>
+        </ul>
+        <p class="guide-note">Stacking everything gets community estimates down to roughly 1 in 256, but Cobblemon hasn't published exact numbers for these stacked boosts, so treat all of the above as "helps a lot," not a guarantee.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Items that spawn a specific Pokemon</h3>
+        <p>A handful of legendaries/mythicals on this server aren't found by normal wild spawning at all &mdash; you trigger their appearance with a specific item instead. For example, Terapagos needs Liko's Pendant held/carried for a set time before it spawns. Each Pokemon that works this way has its own "Special mechanics" section on its dex page here explaining exactly what item and method it needs &mdash; check there rather than assuming every legendary spawns normally.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>IVs on a wild catch</h3>
+        <p>As far as Cobblemon's own documentation confirms, a wild Pokemon's IVs are rolled randomly from 0-31 per stat the same way for every species &mdash; there's no confirmed special IV boost just for being a legendary or mythical. If you land a catch with rough IVs, Hyper Training (special candy items, from Cobblemon 1.7.0+) can nudge individual IVs up by 1 at a time after the fact. If your server has the separate <b>Cobblemon Utility+</b> mod installed, its Bottle Cap-style items (Golden/Silver/Wooden/Void/Obsidian Caps) can fix IVs far faster &mdash; see the EV &amp; IV Training tab.</p>
+      </div>
+    `,
+  },
+
+  training: {
+    title: 'EV & IV Training',
+    html: `
+      <h2>EV &amp; IV Training</h2>
+      <p class="guide-intro">Everything that actually changes a Pokemon's stats: IVs, Natures, EVs, and how to level up faster.</p>
+
+      <div class="guide-card">
+        <h3>IVs (Individual Values)</h3>
+        <p>Each of the 6 stats gets its own hidden IV from 0 to 31, rolled randomly when the Pokemon is generated (caught, hatched, etc). Higher is better, and it's permanent unless you specifically change it.</p>
+        <p><b>Hyper Training</b> (Cobblemon 1.7.0+) uses special candy items that each adjust a single stat's IV by 1 (up or down) &mdash; slow, but a reliable way to polish a Pokemon you already like without starting over.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Natures</h3>
+        <p>There are 25 natures. Each one raises one stat by 10% and lowers a different one by 10%, except for 5 neutral natures that do nothing. A <b>Mint</b> item changes which stat a nature's boost/penalty actually applies to, without changing the nature's displayed name.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>EVs (Effort Values)</h3>
+        <p>Every stat can hold up to <b>252 EVs</b>, and the whole Pokemon caps at <b>510 EVs total</b> across all six stats &mdash; a common competitive spread is 252/252/4 split across two attacking/bulk stats plus Speed.</p>
+        <h4>Ways to gain EVs</h4>
+        <ul>
+          <li><b>Battling</b> &mdash; defeating a wild or trainer Pokemon gives its species' fixed EV yield (the same per-species spread as the mainline games) to your participating party members.</li>
+          <li><b>Vitamins</b> (HP Up, Protein, Iron, Calcium, Zinc, Carbos) &mdash; each adds 10 EVs to their matching stat, up to that stat's/the Pokemon's caps. Craftable at a Brewing Stand from a Medicinal Leek, a Vivichoke (PP Up), and the matching EV-reducing berry.</li>
+          <li><b>Mochis</b> &mdash; a smaller +4 EVs per use, craftable at a Campfire Pot. A <b>Fresh-Start Mochi</b> wipes a Pokemon's EVs back to 0 if you want to rebuild its spread from scratch.</li>
+          <li><b>Power items</b> (Power Weight confirmed: +8 HP EVs per battle win while held, but halves the holder's Speed in battle; Cobblemon also has the matching Power Bracer/Belt/Lens/Band/Anklet for the other five stats, following the same series pattern) &mdash; good for grinding a specific stat passively, at a real battle-performance cost while you use it.</li>
+        </ul>
+        <h4>Lowering EVs on purpose</h4>
+        <p>EV-reducing berries each remove 10 EVs from one stat and raise friendship slightly: Pomeg (HP), Kelpsy (Attack), Qualot (Defense), Hondew (Sp. Attack), Grepa (Sp. Defense), Tamato (Speed).</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Leveling up faster</h3>
+        <ul>
+          <li><b>Rare Candy</b> &mdash; instantly raises level by 1.</li>
+          <li><b>Exp. Candy</b> &mdash; grants a flat chunk of Exp in tiers (XS through XL, same idea as recent mainline games) without needing a battle.</li>
+          <li><b>Lucky Egg</b> (held item) &mdash; boosts the Exp the holder earns from battling, the same 1.5x as the mainline games.</li>
+        </ul>
+      </div>
+
+      <div class="guide-card">
+        <h3>Cobblemon Utility+ shortcuts</h3>
+        <p>If this server has the separate <b>Cobblemon Utility+</b> add-on mod installed, it adds convenience items that skip the grind entirely rather than training it the normal way:</p>
+        <table class="guide-table">
+          <tr><th>Item</th><th>Effect</th></tr>
+          <tr><td>Golden Cap</td><td>Maxes every IV</td></tr>
+          <tr><td>Silver Cap</td><td>Maxes one chosen IV</td></tr>
+          <tr><td>Obsidian Cap</td><td>Lowers one chosen IV by 1</td></tr>
+          <tr><td>Wooden Cap</td><td>Rerolls all IVs randomly</td></tr>
+          <tr><td>Void Cap</td><td>Sets all IVs to 0</td></tr>
+          <tr><td>Void Feather</td><td>Sets all EVs to 0</td></tr>
+          <tr><td>Common Candy</td><td>Lowers level by 1</td></tr>
+          <tr><td>Master Candy</td><td>Sets level to 100</td></tr>
+          <tr><td>Cobblemax</td><td>Maxes level, IVs, and friendship all at once</td></tr>
+          <tr><td>Cobblemin</td><td>Minimizes level, IVs, and friendship all at once</td></tr>
+          <tr><td>Shiny Card</td><td>Flips shiny status</td></tr>
+        </table>
+        <p class="guide-note">This is a separate mod from base Cobblemon, not something built into the game itself &mdash; whether these items are actually obtainable comes down to how this server has it configured.</p>
+      </div>
+    `,
+  },
+
+  battling: {
+    title: 'Battling & PvP',
+    html: `
+      <h2>Battling &amp; Competitive PvP</h2>
+      <p class="guide-intro">The mechanics that decide close battles: move categories, abilities, and how to actually put an EV/IV/Nature spread together for PvP.</p>
+
+      <div class="guide-card">
+        <h3>Physical, Special, and Status moves</h3>
+        <p>Every move has one fixed category &mdash; it's a property of the move itself, not its type (this hasn't been type-based since the mainline games' Gen 4 split). You can see a move's category as an icon next to its name wherever its details are shown.</p>
+        <ul>
+          <li><b>Physical</b> &mdash; damage is calculated off the attacker's Attack stat vs the target's Defense.</li>
+          <li><b>Special</b> &mdash; damage is calculated off the attacker's Sp. Attack vs the target's Sp. Defense.</li>
+          <li><b>Status</b> &mdash; deals no direct damage; it changes stats, inflicts conditions, sets up field/team effects, etc. instead.</li>
+        </ul>
+        <p class="guide-note">This is exactly why a Pokemon's EV spread should match the category of the moves it's actually going to use &mdash; investing in Sp. Attack does nothing for a moveset that's entirely physical, and vice versa.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Abilities</h3>
+        <p>A passive effect every Pokemon has, visible on its Summary screen. Some species have access to a rarer Hidden Ability alongside their normal one or two options &mdash; worth checking before you commit to a build, since abilities can completely change a Pokemon's role (e.g. a weather setter, an immunity, a stat booster on switch-in).</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Building a competitive spread</h3>
+        <ol>
+          <li><b>Decide its role</b> &mdash; physical sweeper, special wall, support, etc. This decides everything after it.</li>
+          <li><b>Pick a Nature</b> that boosts the stat the role leans on and cuts one it doesn't need (e.g. a physical attacker wants +Attack, and can usually afford -Sp. Attack).</li>
+          <li><b>Spread the EVs</b> toward that role &mdash; commonly 252 into the main offensive stat, 252 into Speed or bulk, and the remaining 4 wherever helps most, staying under the 510 total cap.</li>
+          <li><b>Polish the IVs</b> for the stats that matter (Hyper Training or Cobblemon Utility+'s Bottle Cap items, if installed, can fix a good catch's weak stat after the fact).</li>
+          <li><b>Pick the ability and held item</b> that fit the role.</li>
+          <li><b>Build the moveset</b> around same-type-as-Pokemon ("STAB") damage, a couple of coverage moves for types that would otherwise wall it, and one status/utility move if there's room.</li>
+        </ol>
+      </div>
+
+      <div class="guide-card">
+        <h3>Don't forget</h3>
+        <p>Mega Evolution can be a huge mid-battle swing on the Pokemon that support it &mdash; see the Mega Evolution tab for how to set one up. And always weigh the type matchup: the type chart still decides more fights than any stat spread does.</p>
+      </div>
+    `,
+  },
+
+  mega: {
+    title: 'Mega Evolution',
+    html: null, // rendered dynamically by megaGeneralHtml() since it needs MEGA_GENERAL data
+  },
+};
+
+function renderGuide(key) {
+  const content = document.getElementById('guide-content');
+  const guide = GUIDES[key];
+  if (!guide) return;
+  if (key === 'mega') {
+    content.innerHTML = `<h2>Mega Evolution</h2><p class="guide-intro">How to actually set up Mega Evolution on this server, step by step.</p>${megaGeneralHtml()}`;
+  } else {
+    content.innerHTML = guide.html;
+  }
+  document.querySelectorAll('.guide-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-guide') === key);
+  });
+}
+
+document.querySelectorAll('.guide-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => renderGuide(btn.getAttribute('data-guide')));
+});
+
+// ============================================================
+// Team Builder: a Showdown-teambuilder-style planner. Species/base-stats
+// come from DEX (already loaded); move/ability/item names, types and
+// descriptions come from teambuilder.json/tb_moves.json/tb_abilities.json/
+// tb_items.json, which are lazy-loaded the first time this tab opens
+// (together they're a few hundred KB, no reason to make everyone pay for
+// that on page load if they never touch the tab).
+// ============================================================
+
+const NATURES = {
+  Hardy: {}, Lonely: { plus: 'atk', minus: 'def' }, Brave: { plus: 'atk', minus: 'spe' }, Adamant: { plus: 'atk', minus: 'spa' }, Naughty: { plus: 'atk', minus: 'spd' },
+  Bold: { plus: 'def', minus: 'atk' }, Docile: {}, Relaxed: { plus: 'def', minus: 'spe' }, Impish: { plus: 'def', minus: 'spa' }, Lax: { plus: 'def', minus: 'spd' },
+  Timid: { plus: 'spe', minus: 'atk' }, Hasty: { plus: 'spe', minus: 'def' }, Serious: {}, Jolly: { plus: 'spe', minus: 'spa' }, Naive: { plus: 'spe', minus: 'spd' },
+  Modest: { plus: 'spa', minus: 'atk' }, Mild: { plus: 'spa', minus: 'def' }, Quiet: { plus: 'spa', minus: 'spe' }, Bashful: {}, Rash: { plus: 'spa', minus: 'spd' },
+  Calm: { plus: 'spd', minus: 'atk' }, Gentle: { plus: 'spd', minus: 'def' }, Sassy: { plus: 'spd', minus: 'spe' }, Careful: { plus: 'spd', minus: 'spa' }, Quirky: {},
+};
+const STAT_LABELS = [['hp', 'HP'], ['atk', 'Atk'], ['def', 'Def'], ['spa', 'SpA'], ['spd', 'SpD'], ['spe', 'Spe']];
+const MOVE_METHOD_LABELS = { level: 'Lv', egg: 'Egg', tm: 'TM', tutor: 'Tutor', legacy: '', special: '' };
+
+let TB_LOADED = false;
+let TB_DATA = null;
+let TB_MOVES = null;
+let TB_ABILITIES = null;
+let TB_ITEMS = null;
+let SPECIES_NAME_TO_ID = null;
+let TEAM = [null, null, null, null, null, null];
+
+function emptySlot(speciesId) {
+  return {
+    speciesId,
+    nickname: '',
+    item: '',
+    ability: '',
+    level: 100,
+    nature: 'Serious',
+    evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    moves: ['', '', '', ''],
+  };
+}
+
+function saveTeam() {
+  try { localStorage.setItem('pokedex-team', JSON.stringify(TEAM)); } catch (e) {}
+}
+function loadSavedTeam() {
+  try {
+    const raw = localStorage.getItem('pokedex-team');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === 6) TEAM = parsed;
+    }
+  } catch (e) {}
+}
+
+async function loadTeamBuilderData() {
+  if (TB_LOADED) return;
+  loadSavedTeam();
+  document.getElementById('team-loading').style.display = '';
+  document.getElementById('team-slots').style.display = 'none';
+  try {
+    const [tbRes, movesRes, abilitiesRes, itemsRes] = await Promise.all([
+      fetch('teambuilder.json'),
+      fetch('tb_moves.json'),
+      fetch('tb_abilities.json'),
+      fetch('tb_items.json'),
+    ]);
+    TB_DATA = await tbRes.json();
+    TB_MOVES = await movesRes.json();
+    TB_ABILITIES = await abilitiesRes.json();
+    TB_ITEMS = await itemsRes.json();
+  } catch (e) {
+    document.getElementById('team-loading').innerHTML = '<p>Could not load team builder data. Try refreshing the page.</p>';
+    return;
+  }
+
+  SPECIES_NAME_TO_ID = {};
+  const datalist = document.createElement('datalist');
+  datalist.id = 'tb-species-list';
+  for (const p of DEX) {
+    if (!TB_DATA[p.id]) continue; // skip anything with no moveset data
+    const display = p.regionalForm ? `${p.name} (${p.regionalForm})` : p.name;
+    SPECIES_NAME_TO_ID[display.toLowerCase()] = p.id;
+    const opt = document.createElement('option');
+    opt.value = display;
+    datalist.appendChild(opt);
+  }
+  document.body.appendChild(datalist);
+
+  TB_LOADED = true;
+  document.getElementById('team-loading').style.display = 'none';
+  document.getElementById('team-slots').style.display = '';
+  renderTeamBuilder();
+}
+
+function clampInt(val, min, max, fallback) {
+  const n = parseInt(val, 10);
+  if (isNaN(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}
+
+function teamStatusText() {
+  const filled = TEAM.filter(Boolean).length;
+  return `${filled} / 6 Pokemon`;
+}
+
+function moveOptionLabel(moveId) {
+  const info = TB_MOVES[moveId];
+  if (!info) return moveId;
+  const power = info.category === 'Status' ? '--' : info.power;
+  return `${info.name} (${info.type}, ${info.category}, ${power} pow)`;
+}
+
+function slotHtml(slot, idx) {
+  if (!slot) {
+    return `
+      <div class="team-slot" data-slot="${idx}">
+        <div class="team-slot-empty">
+          <span style="font-size:28px;">&#10133;</span>
+          <input type="text" class="tb-species-input" data-slot="${idx}" list="tb-species-list" placeholder="Add Pokemon ${idx + 1}&hellip;" autocomplete="off">
+        </div>
+      </div>
+    `;
+  }
+  const p = DEX_BY_ID[slot.speciesId];
+  const tb = TB_DATA[slot.speciesId] || { baseStats: {}, abilities: [], moves: [] };
+  if (!p || !tb) return '';
+
+  const abilityOptions = tb.abilities.map(a => {
+    const info = TB_ABILITIES[a.id];
+    const name = info ? info.name : a.id;
+    return `<option value="${a.id}"${slot.ability === a.id ? ' selected' : ''}>${name}${a.hidden ? ' (Hidden)' : ''}</option>`;
+  }).join('');
+
+  const itemEntries = Object.entries(TB_ITEMS).sort((a, b) => a[1].name.localeCompare(b[1].name));
+  const itemOptions = `<option value="">-- none --</option>` + itemEntries.map(([id, info]) =>
+    `<option value="${id}"${slot.item === id ? ' selected' : ''}>${info.name}</option>`).join('');
+
+  const moveSelect = (i) => {
+    const chosen = slot.moves[i];
+    let opts = `<option value="">-- move ${i + 1} --</option>`;
+    opts += tb.moves.map(m => `<option value="${m.id}"${chosen === m.id ? ' selected' : ''}>${moveOptionLabel(m.id)}</option>`).join('');
+    return `<select data-field="move-${i}" data-slot="${idx}">${opts}</select>`;
+  };
+
+  const evTotal = Object.values(slot.evs).reduce((a, b) => a + b, 0);
+  const evInputs = STAT_LABELS.map(([k, l]) =>
+    `<input type="text" inputmode="numeric" data-field="ev-${k}" data-slot="${idx}" value="${slot.evs[k]}" title="${l} EVs">`).join('');
+  const evLabelsRow = STAT_LABELS.map(([k, l]) => `<span>${l}</span>`).join('');
+  const ivInputs = STAT_LABELS.map(([k, l]) =>
+    `<input type="text" inputmode="numeric" data-field="iv-${k}" data-slot="${idx}" value="${slot.ivs[k]}" title="${l} IVs">`).join('');
+
+  const natureOptions = Object.keys(NATURES).map(n => {
+    const info = NATURES[n];
+    const label = info.plus ? `${n} (+${info.plus.toUpperCase()}/-${info.minus.toUpperCase()})` : `${n} (neutral)`;
+    return `<option value="${n}"${slot.nature === n ? ' selected' : ''}>${label}</option>`;
+  }).join('');
+
+  return `
+    <div class="team-slot" data-slot="${idx}">
+      <div class="team-slot-header">
+        <img class="team-slot-sprite" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+        <div class="team-slot-name">${p.name}${p.regionalForm ? ` (${p.regionalForm})` : ''}</div>
+        <button type="button" class="team-slot-remove" data-action="remove" data-slot="${idx}" title="Remove">&times;</button>
+      </div>
+      <div class="tb-row">
+        <div class="tb-field">
+          <label>Nickname</label>
+          <input type="text" data-field="nickname" data-slot="${idx}" value="${slot.nickname || ''}" placeholder="${p.name}">
+        </div>
+        <div class="tb-field" style="max-width:80px;">
+          <label>Level</label>
+          <input type="text" inputmode="numeric" data-field="level" data-slot="${idx}" value="${slot.level}">
+        </div>
+      </div>
+      <div class="tb-row">
+        <div class="tb-field">
+          <label>Ability</label>
+          <select data-field="ability" data-slot="${idx}"><option value="">-- pick --</option>${abilityOptions}</select>
+        </div>
+        <div class="tb-field">
+          <label>Item</label>
+          <select data-field="item" data-slot="${idx}">${itemOptions}</select>
+        </div>
+      </div>
+      <div class="tb-field">
+        <label>Nature</label>
+        <select data-field="nature" data-slot="${idx}">${natureOptions}</select>
+      </div>
+      <div class="tb-field">
+        <label>EVs (${evTotal} / 510)</label>
+        <div class="tb-ev-row">${evInputs}</div>
+        <div class="tb-ev-total${evTotal > 510 ? ' over' : ''}">${evLabelsRow}</div>
+      </div>
+      <div class="tb-field">
+        <label>IVs</label>
+        <div class="tb-iv-row">${ivInputs}</div>
+      </div>
+      <div class="tb-field">
+        <label>Moves</label>
+        <div class="tb-moves">${[0, 1, 2, 3].map(moveSelect).join('')}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTeamBuilder() {
+  const container = document.getElementById('team-slots');
+  container.innerHTML = TEAM.map((slot, i) => slotHtml(slot, i)).join('');
+  document.getElementById('team-status').textContent = teamStatusText();
+  saveTeam();
+}
+
+document.getElementById('team-slots').addEventListener('input', e => {
+  const target = e.target;
+  const idx = parseInt(target.getAttribute('data-slot'), 10);
+  if (isNaN(idx)) return;
+
+  if (target.classList.contains('tb-species-input')) {
+    const id = SPECIES_NAME_TO_ID[target.value.trim().toLowerCase()];
+    if (id) {
+      TEAM[idx] = emptySlot(id);
+      const tb = TB_DATA[id];
+      if (tb && tb.abilities.length) TEAM[idx].ability = tb.abilities[0].id;
+      renderTeamBuilder();
+    }
+    return;
+  }
+
+  const field = target.getAttribute('data-field');
+  if (!field || !TEAM[idx]) return;
+  const slot = TEAM[idx];
+
+  if (field === 'nickname') { slot.nickname = target.value; saveTeam(); return; }
+  if (field === 'level') { slot.level = clampInt(target.value, 1, 100, slot.level); saveTeam(); return; }
+  if (field === 'ability') { slot.ability = target.value; saveTeam(); return; }
+  if (field === 'item') { slot.item = target.value; saveTeam(); return; }
+  if (field === 'nature') { slot.nature = target.value; saveTeam(); return; }
+  if (field.startsWith('move-')) {
+    const i = parseInt(field.split('-')[1], 10);
+    slot.moves[i] = target.value;
+    saveTeam();
+    return;
+  }
+  if (field.startsWith('ev-')) {
+    const stat = field.split('-')[1];
+    const otherTotal = Object.entries(slot.evs).reduce((sum, [k, v]) => sum + (k === stat ? 0 : v), 0);
+    slot.evs[stat] = clampInt(target.value, 0, Math.min(252, 510 - otherTotal), slot.evs[stat]);
+    // Re-render so the total/cap display updates and the clamp is reflected
+    // back into the input even if the user typed something out of range.
+    renderTeamBuilder();
+    return;
+  }
+  if (field.startsWith('iv-')) {
+    const stat = field.split('-')[1];
+    slot.ivs[stat] = clampInt(target.value, 0, 31, slot.ivs[stat]);
+    // Re-render so an out-of-range value the user typed is visibly
+    // snapped back to the clamped value, matching the EV field's behavior.
+    renderTeamBuilder();
+    return;
+  }
+});
+
+document.getElementById('team-slots').addEventListener('click', e => {
+  const btn = e.target.closest('[data-action="remove"]');
+  if (!btn) return;
+  const idx = parseInt(btn.getAttribute('data-slot'), 10);
+  TEAM[idx] = null;
+  renderTeamBuilder();
+});
+
+document.getElementById('team-clear').addEventListener('click', () => {
+  TEAM = [null, null, null, null, null, null];
+  renderTeamBuilder();
+  document.getElementById('team-export-panel').style.display = 'none';
+});
+
+function exportSlotToShowdown(slot) {
+  const p = DEX_BY_ID[slot.speciesId];
+  const speciesName = p.name + (p.regionalForm ? `-${p.regionalForm}` : '');
+  const lines = [];
+  const nick = slot.nickname && slot.nickname.trim() ? slot.nickname.trim() : null;
+  const itemInfo = slot.item ? TB_ITEMS[slot.item] : null;
+  let header = nick ? `${nick} (${speciesName})` : speciesName;
+  if (itemInfo) header += ` @ ${itemInfo.name}`;
+  lines.push(header);
+  if (slot.ability) {
+    const abilityInfo = TB_ABILITIES[slot.ability];
+    lines.push(`Ability: ${abilityInfo ? abilityInfo.name : slot.ability}`);
+  }
+  if (slot.level && slot.level !== 100) lines.push(`Level: ${slot.level}`);
+  const evParts = STAT_LABELS.filter(([k]) => slot.evs[k] > 0).map(([k, l]) => `${slot.evs[k]} ${l}`);
+  if (evParts.length) lines.push(`EVs: ${evParts.join(' / ')}`);
+  lines.push(`${slot.nature} Nature`);
+  const ivParts = STAT_LABELS.filter(([k]) => slot.ivs[k] !== 31).map(([k, l]) => `${slot.ivs[k]} ${l}`);
+  if (ivParts.length) lines.push(`IVs: ${ivParts.join(' / ')}`);
+  for (const m of slot.moves) {
+    if (!m) continue;
+    const info = TB_MOVES[m];
+    lines.push(`- ${info ? info.name : m}`);
+  }
+  return lines.join('\n');
+}
+
+document.getElementById('team-export').addEventListener('click', () => {
+  const filled = TEAM.filter(Boolean);
+  const text = filled.map(exportSlotToShowdown).join('\n\n');
+  document.getElementById('team-export-text').value = text || '(Add at least one Pokemon first.)';
+  document.getElementById('team-export-panel').style.display = '';
+  document.getElementById('team-export-text').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+document.getElementById('team-export-close').addEventListener('click', () => {
+  document.getElementById('team-export-panel').style.display = 'none';
+});
+document.getElementById('team-export-copy').addEventListener('click', async () => {
+  const textarea = document.getElementById('team-export-text');
+  textarea.select();
+  const btn = document.getElementById('team-export-copy');
+  try {
+    await navigator.clipboard.writeText(textarea.value);
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch (e) {
+    // Clipboard API unavailable/blocked -- the textarea is already
+    // selected above so a manual Ctrl+C still works.
+  }
+});
+
+function switchMainView(view) {
+  document.getElementById('dex-view').style.display = view === 'dex' ? '' : 'none';
+  document.getElementById('guides-view').style.display = view === 'guides' ? '' : 'none';
+  document.getElementById('team-view').style.display = view === 'team' ? '' : 'none';
+  document.getElementById('nav-dex').classList.toggle('active', view === 'dex');
+  document.getElementById('nav-guides').classList.toggle('active', view === 'guides');
+  document.getElementById('nav-team').classList.toggle('active', view === 'team');
+  if (view === 'guides' && !document.getElementById('guide-content').innerHTML) {
+    renderGuide('catching');
+  }
+  if (view === 'team') loadTeamBuilderData();
+}
+document.getElementById('nav-dex').addEventListener('click', () => switchMainView('dex'));
+document.getElementById('nav-guides').addEventListener('click', () => switchMainView('guides'));
+document.getElementById('nav-team').addEventListener('click', () => switchMainView('team'));
 
 document.getElementById('overlay').addEventListener('click', e => {
   if (e.target.id === 'overlay') closeDetail();

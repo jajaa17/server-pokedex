@@ -1,0 +1,101 @@
+{
+  "_note": "You only need ONE Key Stone item total (any single Mega Bracelet/Ring variant) -- not one per Pokemon. Wear it as an accessory, then have your Pokemon hold ITS OWN matching Mega Stone to Mega Evolve in battle.",
+  "steps": [
+    {
+      "result": "Keystone",
+      "ingredients": [],
+      "note": "Mine Keystone Ore (found in the mod's own Mega structure) -- it drops a raw Keystone directly with a normal tool, or the ore block itself with Silk Touch."
+    },
+    {
+      "result": "Block of Keystone (optional storage)",
+      "ingredients": [
+        "Keystone"
+      ],
+      "note": "9 Keystones compact into 1 block for storage; reversible (a Block of Keystone can be crafted back into 9 Keystones)."
+    }
+  ],
+  "bracelet_variants": [
+    {
+      "result": "Mega Ring",
+      "ingredients": [
+        "Black Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Mega Bracelet",
+      "ingredients": [
+        "White Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Red Mega Bracelet",
+      "ingredients": [
+        "Red Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Pink Mega Bracelet",
+      "ingredients": [
+        "Pink Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Yellow Mega Bracelet",
+      "ingredients": [
+        "Yellow Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Green Mega Bracelet",
+      "ingredients": [
+        "Green Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Blue Mega Bracelet",
+      "ingredients": [
+        "Blue Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "Black Mega Bracelet",
+      "ingredients": [
+        "Black Apricorn",
+        "Diamond",
+        "Iron Ingot",
+        "Keystone"
+      ]
+    },
+    {
+      "result": "May's bracelet",
+      "ingredients": [
+        "Iron Ingot",
+        "Keystone",
+        "Pink Apricorn",
+        "Nautilus Shell",
+        "Yellow Apricorn"
+      ]
+    }
+  ]
+}
