@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Server Pokedex</title>
+<script>
+  // Applied before first paint so switching themes never flashes the wrong one.
+  (function () {
+    try {
+      var saved = localStorage.getItem('pokedex-theme');
+      if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -23,21 +32,65 @@
     --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --head: 'Baloo 2', ui-rounded, 'Nunito', sans-serif;
     --body: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    --confetti: rgba(255,255,255,0.5);
+    --controls-bg: rgba(255,255,255,0.82);
+    --controls-border: rgba(230,220,190,0.7);
+    --overlay-bg: rgba(30,20,10,0.55);
+    --close-bg: rgba(255,255,255,0.7);
+    --close-bg-hover: #ffffff;
+    --card-hover-border: #f0d98c;
+    --warn-text: #b5790f;
+    --form-bg: #efe3ff; --form-text: #7a4fc9;
+    --snack-bg: #fff6e8; --snack-border: #f2dfb3; --snack-text: #a97a1f;
+    --mech-bg: #fff0f0; --mech-border: #f5c9c9;
+    --biome-bg: #eaf6ea; --biome-border: #cde8cd; --biome-text: #2f7a3d;
+    --cond-bg: #eaf1ff; --cond-border: #c8d9fb; --cond-text: #2f5ac9;
+    --bonus-bg: #eafff0; --bonus-border: #bdeecb; --bonus-text: #1f8a49;
+  }
+  :root[data-theme="dark"] {
+    --bg-a: #1b1d24;
+    --bg-b: #14151a;
+    --panel: #1e212a;
+    --panel-2: #262a35;
+    --line: #343947;
+    --text: #eef0f4;
+    --muted: #9096ac;
+    --accent: #ff5252;
+    --accent-dark: #8a1414;
+    --gold: #ffd23f;
+    --blue: #6f9bff;
+
+    --confetti: rgba(255,255,255,0.05);
+    --controls-bg: rgba(20,21,26,0.82);
+    --controls-border: rgba(60,64,80,0.7);
+    --overlay-bg: rgba(0,0,0,0.7);
+    --close-bg: rgba(255,255,255,0.12);
+    --close-bg-hover: rgba(255,255,255,0.22);
+    --card-hover-border: #4a4f63;
+    --warn-text: #e0a83b;
+    --form-bg: #2c2440; --form-text: #c9a8ff;
+    --snack-bg: #332a17; --snack-border: #4d3f1f; --snack-text: #e0b45a;
+    --mech-bg: #331717; --mech-border: #4d2323;
+    --biome-bg: #17331e; --biome-border: #235030; --biome-text: #6fd98a;
+    --cond-bg: #182a4a; --cond-border: #234066; --cond-text: #7fabff;
+    --bonus-bg: #17331f; --bonus-border: #235030; --bonus-text: #5fd98a;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
     background:
-      radial-gradient(circle at 8% 14%, rgba(255,255,255,0.55) 0 3px, transparent 4px),
-      radial-gradient(circle at 32% 68%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
-      radial-gradient(circle at 58% 22%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
-      radial-gradient(circle at 78% 78%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
-      radial-gradient(circle at 90% 40%, rgba(255,255,255,0.5) 0 3px, transparent 4px),
+      radial-gradient(circle at 8% 14%, var(--confetti) 0 3px, transparent 4px),
+      radial-gradient(circle at 32% 68%, var(--confetti) 0 3px, transparent 4px),
+      radial-gradient(circle at 58% 22%, var(--confetti) 0 3px, transparent 4px),
+      radial-gradient(circle at 78% 78%, var(--confetti) 0 3px, transparent 4px),
+      radial-gradient(circle at 90% 40%, var(--confetti) 0 3px, transparent 4px),
       linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 100%);
     background-attachment: fixed;
     color: var(--text);
     font-family: var(--body);
     line-height: 1.45;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
   h1, h2, h3, h4 { font-family: var(--head); }
 
@@ -109,11 +162,27 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: rgba(255,255,255,0.82);
+    background: var(--controls-bg);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(230,220,190,0.7);
+    border-bottom: 1px solid var(--controls-border);
     z-index: -1;
   }
+  .icon-btn {
+    flex: 0 0 auto;
+    background: var(--panel);
+    border: 2px solid var(--line);
+    color: var(--text);
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .icon-btn:hover { border-color: var(--accent); }
   input[type="search"], select {
     background: var(--panel);
     border: 2px solid var(--line);
@@ -186,7 +255,7 @@
   .card:hover {
     transform: translateY(-4px) scale(1.015);
     box-shadow: 0 10px 0 rgba(0,0,0,0.03), 0 16px 26px rgba(60,50,20,0.14);
-    border-color: #f0d98c;
+    border-color: var(--card-hover-border);
   }
   .card:hover .sprite { animation: wiggle 0.5s ease; }
   .card-top {
@@ -238,7 +307,7 @@
   .missing-note {
     margin-top: 8px;
     font-size: 12px;
-    color: #b5790f;
+    color: var(--warn-text);
   }
   .form-badge {
     display: inline-block;
@@ -249,23 +318,23 @@
     text-transform: uppercase;
     padding: 3px 8px;
     border-radius: 999px;
-    background: #efe3ff;
-    color: #7a4fc9;
+    background: var(--form-bg);
+    color: var(--form-text);
     vertical-align: middle;
   }
   .snack-section {
     margin-top: 14px;
     padding: 10px 12px;
     border-radius: 12px;
-    background: #fff6e8;
-    border: 1px solid #f2dfb3;
+    background: var(--snack-bg);
+    border: 1px solid var(--snack-border);
   }
   .snack-section h4 {
     margin: 0 0 8px;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #a97a1f;
+    color: var(--snack-text);
   }
   .snack-row {
     font-size: 13px;
@@ -277,8 +346,8 @@
     margin-top: 14px;
     padding: 10px 12px;
     border-radius: 12px;
-    background: #fff0f0;
-    border: 1px solid #f5c9c9;
+    background: var(--mech-bg);
+    border: 1px solid var(--mech-border);
   }
   .mechanics-section h4 {
     margin: 0 0 8px;
@@ -346,7 +415,7 @@
   #overlay {
     display: none;
     position: fixed; inset: 0;
-    background: rgba(30,20,10,0.55);
+    background: var(--overlay-bg);
     z-index: 20;
     align-items: flex-start;
     justify-content: center;
@@ -373,7 +442,7 @@
   .sheet-close {
     position: absolute;
     top: 14px; right: 16px;
-    background: rgba(255,255,255,0.7);
+    background: var(--close-bg);
     border: none;
     color: var(--text);
     font-size: 18px;
@@ -383,7 +452,7 @@
     line-height: 1;
     font-weight: 700;
   }
-  .sheet-close:hover { background: #fff; }
+  .sheet-close:hover { background: var(--close-bg-hover); }
   .sheet-body { padding: 14px 24px 0; }
   .sheet h2 { margin: 4px 0 2px; font-size: 24px; font-weight: 800; }
   .sheet .dex { display: inline-block; margin-bottom: 6px; }
@@ -437,9 +506,9 @@
     font-size: 11px;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #eaf6ea;
-    border: 1px solid #cde8cd;
-    color: #2f7a3d;
+    background: var(--biome-bg);
+    border: 1px solid var(--biome-border);
+    color: var(--biome-text);
     font-weight: 600;
   }
   .spawn-row .level { color: var(--muted); margin-top: 6px; font-weight: 700; }
@@ -448,18 +517,18 @@
     font-size: 11px;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #eaf1ff;
-    border: 1px solid #c8d9fb;
-    color: #2f5ac9;
+    background: var(--cond-bg);
+    border: 1px solid var(--cond-border);
+    color: var(--cond-text);
     font-weight: 600;
   }
   .bonus-badge {
     font-size: 11px;
     padding: 3px 9px;
     border-radius: 999px;
-    background: #eafff0;
-    border: 1px solid #bdeecb;
-    color: #1f8a49;
+    background: var(--bonus-bg);
+    border: 1px solid var(--bonus-border);
+    color: var(--bonus-text);
     font-weight: 600;
   }
   .no-spawn-text { color: var(--muted); font-size: 13px; padding-top: 10px; }
@@ -498,6 +567,10 @@
     <option value="name">Sort: Name (A-Z)</option>
     <option value="type">Sort: Primary type</option>
   </select>
+  <select id="voice-select" aria-label="Read-aloud voice">
+    <option value="">Dex voice: Default</option>
+  </select>
+  <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
 </div>
 
 <div class="count" id="count"></div>
@@ -819,6 +892,62 @@ function evolutionHtml(p) {
   `;
 }
 
+// ---- Read-aloud voice picker ----
+// Browsers can't perform a real, copyrighted anime voice actor's lines --
+// speechSynthesis only offers whatever text-to-speech voices are installed
+// on the visitor's own system/browser. To make the built-in options less
+// flat/robotic we (a) let people pick whichever installed voice actually
+// sounds best to them and remember that choice, and (b) tune the pitch and
+// speaking rate to be livelier -- more like an energetic gadget voice
+// (fitting, since the in-universe Rotom Dex is itself a talking device)
+// than a monotone screen-reader.
+let VOICES = [];
+function populateVoiceList() {
+  if (!window.speechSynthesis) return;
+  VOICES = window.speechSynthesis.getVoices();
+  const select = document.getElementById('voice-select');
+  if (!select || !VOICES.length) return;
+  let saved = '';
+  try { saved = localStorage.getItem('pokedex-voice') || ''; } catch (e) {}
+  select.innerHTML = '<option value="">Dex voice: Default</option>';
+  VOICES.forEach((v, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    opt.textContent = `${v.name} (${v.lang})`;
+    select.appendChild(opt);
+  });
+  if (saved && VOICES[Number(saved)]) select.value = saved;
+}
+if (window.speechSynthesis) {
+  populateVoiceList();
+  window.speechSynthesis.onvoiceschanged = populateVoiceList;
+}
+
+// A couple of quick synthesized electronic "beeps" (no recorded audio,
+// just tones from the Web Audio API) played before speaking, for a bit of
+// talking-gadget personality.
+function playChime() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    [880, 1175].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      const start = ctx.currentTime + i * 0.09;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.06, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.08);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.09);
+    });
+    setTimeout(() => ctx.close(), 400);
+  } catch (e) {}
+}
+
 // Cancels any in-progress speech and speaks the given text aloud, toggling
 // a wiggling ".speaking" state on the button that triggered it (anime
 // Pokedex "read the entry aloud" flavor). Silently disables the button
@@ -829,15 +958,19 @@ function speak(text, btn) {
     return;
   }
   window.speechSynthesis.cancel();
+  playChime();
   const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 1.0;
-  utter.pitch = 1.05;
+  utter.rate = 1.08;
+  utter.pitch = 1.25;
+  const select = document.getElementById('voice-select');
+  const idx = select ? select.value : '';
+  if (idx !== '' && VOICES[Number(idx)]) utter.voice = VOICES[Number(idx)];
   if (btn) {
     btn.classList.add('speaking');
     utter.onend = () => btn.classList.remove('speaking');
     utter.onerror = () => btn.classList.remove('speaking');
   }
-  window.speechSynthesis.speak(utter);
+  setTimeout(() => window.speechSynthesis.speak(utter), 180);
 }
 
 // The Rotom-Dex-style "flavor text" speech bubble, with a speaker button
@@ -944,6 +1077,27 @@ document.getElementById('search').addEventListener('input', render);
 document.getElementById('type-filter').addEventListener('change', render);
 document.getElementById('biome-filter').addEventListener('change', render);
 document.getElementById('sort').addEventListener('change', render);
+
+document.getElementById('voice-select').addEventListener('change', e => {
+  try { localStorage.setItem('pokedex-voice', e.target.value); } catch (err) {}
+});
+
+// ---- Dark mode ----
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  try { localStorage.setItem('pokedex-theme', theme); } catch (e) {}
+}
+(function initTheme() {
+  let saved = '';
+  try { saved = localStorage.getItem('pokedex-theme') || ''; } catch (e) {}
+  applyTheme(saved === 'dark' ? 'dark' : 'light');
+})();
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+});
 
 load();
 </script>
