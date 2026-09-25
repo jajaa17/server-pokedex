@@ -160,6 +160,64 @@
   }
   .snack-row .snack-name { color: var(--text); font-weight: 600; }
 
+  .mechanics-section {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 200, 90, 0.08);
+    border: 1px solid rgba(255, 200, 90, 0.28);
+  }
+  .mechanics-section h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #e0b45c;
+  }
+  .mechanics-note {
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 8px;
+  }
+  .mechanics-note:last-child { margin-bottom: 0; }
+
+  .evo-section { margin-top: 14px; }
+  .evo-section h4 {
+    margin: 0 0 8px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .evo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
+  }
+  .evo-row:first-of-type { border-top: none; }
+  .evo-sprite {
+    width: 40px;
+    height: 40px;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    flex: 0 0 auto;
+    background: var(--panel-2);
+    border-radius: 6px;
+  }
+  .evo-arrow { color: var(--muted); flex: 0 0 auto; }
+  .evo-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .evo-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .evo-name:hover { text-decoration: underline; }
+  .evo-desc { font-size: 12px; color: var(--muted); }
+
   /* Type colors, matching the standard Pokemon type palette */
   .t-normal   { background: #A8A77A; } .t-fire   { background: #EE8130; }
   .t-water    { background: #6390F0; } .t-electric{ background: #F7D02C; }
@@ -285,6 +343,12 @@
 
 <script>
 let DEX = [];
+let DEX_BY_ID = {};
+// Reverse of each entry's own "evolvesTo": id -> [{from, description}]. Built
+// once after load() so every evolution line only has one source of truth
+// (the "evolvesTo" list on the pre-evolution entry) instead of duplicating
+// data in both directions inside pokedex.json.
+let EVOLVES_FROM = {};
 
 // Sprite from the national dex number (all species on this server, including
 // the ATM x MSD additions, use real national dex numbers, so this works for
@@ -403,6 +467,14 @@ async function load() {
   BIOME_NAMES = await biomeRes.json();
   SNACKS = await snackRes.json();
 
+  DEX_BY_ID = Object.fromEntries(DEX.map(p => [p.id, p]));
+  EVOLVES_FROM = {};
+  for (const p of DEX) {
+    for (const evo of (p.evolvesTo || [])) {
+      (EVOLVES_FROM[evo.to] ||= []).push({ from: p.id, description: evo.description });
+    }
+  }
+
   const types = [...new Set(DEX.flatMap(p => p.types))].sort();
   const typeSelect = document.getElementById('type-filter');
   for (const t of types) {
@@ -515,6 +587,53 @@ function snackTipsHtml(p) {
   `;
 }
 
+// Special obtain/form-change mechanics (Terastal forms, Primal Reversion,
+// fusions, held items, etc.) pulled from the Mega Showdown wiki and this
+// server's actual ATM x MSD recipe files -- see tools/mechanics.json.
+function mechanicsHtml(p) {
+  if (!p.mechanics || !p.mechanics.length) return '';
+  return `
+    <div class="mechanics-section">
+      <h4>Special mechanics</h4>
+      ${p.mechanics.map(m => `<div class="mechanics-note">${m}</div>`).join('')}
+    </div>
+  `;
+}
+
+// One evolution-chain row: a small sprite, the Pokemon's name (clickable,
+// jumps the sheet to that entry), and the plain-English requirement text.
+function evoRow(dexId, description, direction) {
+  const target = DEX_BY_ID[dexId];
+  if (!target) return '';
+  const arrow = direction === 'from' ? '←' : '→';
+  return `
+    <div class="evo-row">
+      ${direction === 'to' ? `<span class="evo-arrow">${arrow}</span>` : ''}
+      <img class="evo-sprite" src="${spriteUrl(target)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${target.name} sprite">
+      <div class="evo-info">
+        <span class="evo-name" data-goto="${target.id}">${target.name}${target.regionalForm ? ` (${target.regionalForm})` : ''}</span>
+        <span class="evo-desc">${description}</span>
+      </div>
+      ${direction === 'from' ? `<span class="evo-arrow">${arrow}</span>` : ''}
+    </div>
+  `;
+}
+
+function evolutionHtml(p) {
+  const before = EVOLVES_FROM[p.id] || [];
+  const after = p.evolvesTo || [];
+  if (!before.length && !after.length) return '';
+  const beforeHtml = before.map(e => evoRow(e.from, e.description, 'from')).join('');
+  const afterHtml = after.map(e => evoRow(e.to, e.description, 'to')).join('');
+  return `
+    <div class="evo-section">
+      <h4>Evolution</h4>
+      ${beforeHtml}
+      ${afterHtml}
+    </div>
+  `;
+}
+
 function openDetail(p) {
   const sheet = document.getElementById('sheet');
   let spawnHtml;
@@ -568,10 +687,18 @@ function openDetail(p) {
     <div class="types">
       ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
     </div>
+    ${mechanicsHtml(p)}
+    ${evolutionHtml(p)}
     <div style="margin-top:14px;">${spawnHtml}</div>
     ${snackTipsHtml(p)}
   `;
   sheet.querySelector('.sheet-close').addEventListener('click', closeDetail);
+  sheet.querySelectorAll('.evo-name[data-goto]').forEach(el => {
+    el.addEventListener('click', () => {
+      const target = DEX_BY_ID[el.getAttribute('data-goto')];
+      if (target) openDetail(target);
+    });
+  });
   document.getElementById('overlay').classList.add('open');
 }
 
