@@ -881,6 +881,7 @@
     <button type="button" class="guide-tab-btn" data-guide="training">💪 EV &amp; IV Training</button>
     <button type="button" class="guide-tab-btn" data-guide="battling">⚔️ Battling &amp; PvP</button>
     <button type="button" class="guide-tab-btn" data-guide="mega">💎 Mega Evolution</button>
+    <button type="button" class="guide-tab-btn" data-guide="tms">💿 TM Guide</button>
   </div>
   <div id="guide-content" class="guide-content"></div>
 </div>
@@ -891,6 +892,7 @@
       <span id="team-status">Building your team&hellip;</span>
     </div>
     <div class="team-toolbar-right">
+      <button type="button" class="tb-btn" id="team-report-btn">How to get &amp; use this team</button>
       <button type="button" class="tb-btn" id="team-clear">Clear team</button>
       <button type="button" class="tb-btn tb-btn-primary" id="team-export">Export to Showdown format</button>
     </div>
@@ -904,6 +906,13 @@
       <button type="button" class="tb-btn" id="team-export-close">Close</button>
     </div>
     <textarea id="team-export-text" readonly></textarea>
+  </div>
+  <div id="team-report-panel" class="team-export-panel" style="display:none;">
+    <div class="team-export-header">
+      <h3>How to get &amp; use this team</h3>
+      <button type="button" class="tb-btn" id="team-report-close">Close</button>
+    </div>
+    <div id="team-report-content" class="guide-content"></div>
   </div>
 </div>
 
@@ -947,6 +956,27 @@ const TYPE_COLORS = {
   rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746',
   steel: '#B7B7CE', fairy: '#D685AD',
 };
+// Type effectiveness chart -- {defendingType: {attackingType: multiplier}}.
+// Pulled directly from Cobblemon's own bundled Pokemon Showdown battle
+// engine data (data/cobblemon/showdown.zip -> data/typechart.js), not
+// typed from memory, so it matches exactly what this server's battles
+// actually use.
+const TYPE_CHART = {"bug":{"normal":1,"fire":2,"water":1,"electric":1,"grass":0.5,"ice":1,"fighting":0.5,"poison":1,"ground":0.5,"flying":2,"psychic":1,"bug":1,"rock":2,"ghost":1,"dragon":1,"dark":1,"steel":1,"fairy":1},"dark":{"normal":1,"fire":1,"water":1,"electric":1,"grass":1,"ice":1,"fighting":2,"poison":1,"ground":1,"flying":1,"psychic":0,"bug":2,"rock":1,"ghost":0.5,"dragon":1,"dark":0.5,"steel":1,"fairy":2},"dragon":{"normal":1,"fire":0.5,"water":0.5,"electric":0.5,"grass":0.5,"ice":2,"fighting":1,"poison":1,"ground":1,"flying":1,"psychic":1,"bug":1,"rock":1,"ghost":1,"dragon":2,"dark":1,"steel":1,"fairy":2},"electric":{"normal":1,"fire":1,"water":1,"electric":0.5,"grass":1,"ice":1,"fighting":1,"poison":1,"ground":2,"flying":0.5,"psychic":1,"bug":1,"rock":1,"ghost":1,"dragon":1,"dark":1,"steel":0.5,"fairy":1},"fairy":{"normal":1,"fire":1,"water":1,"electric":1,"grass":1,"ice":1,"fighting":0.5,"poison":2,"ground":1,"flying":1,"psychic":1,"bug":0.5,"rock":1,"ghost":1,"dragon":0,"dark":0.5,"steel":2,"fairy":1},"fighting":{"normal":1,"fire":1,"water":1,"electric":1,"grass":1,"ice":1,"fighting":1,"poison":1,"ground":1,"flying":2,"psychic":2,"bug":0.5,"rock":0.5,"ghost":1,"dragon":1,"dark":0.5,"steel":1,"fairy":2},"fire":{"normal":1,"fire":0.5,"water":2,"electric":1,"grass":0.5,"ice":0.5,"fighting":1,"poison":1,"ground":2,"flying":1,"psychic":1,"bug":0.5,"rock":2,"ghost":1,"dragon":1,"dark":1,"steel":0.5,"fairy":0.5},"flying":{"normal":1,"fire":1,"water":1,"electric":2,"grass":0.5,"ice":2,"fighting":0.5,"poison":1,"ground":0,"flying":1,"psychic":1,"bug":0.5,"rock":2,"ghost":1,"dragon":1,"dark":1,"steel":1,"fairy":1},"ghost":{"normal":0,"fire":1,"water":1,"electric":1,"grass":1,"ice":1,"fighting":0,"poison":0.5,"ground":1,"flying":1,"psychic":1,"bug":0.5,"rock":1,"ghost":2,"dragon":1,"dark":2,"steel":1,"fairy":1},"grass":{"normal":1,"fire":2,"water":0.5,"electric":0.5,"grass":0.5,"ice":2,"fighting":1,"poison":2,"ground":0.5,"flying":2,"psychic":1,"bug":2,"rock":1,"ghost":1,"dragon":1,"dark":1,"steel":1,"fairy":1},"ground":{"normal":1,"fire":1,"water":2,"electric":0,"grass":2,"ice":2,"fighting":1,"poison":0.5,"ground":1,"flying":1,"psychic":1,"bug":1,"rock":0.5,"ghost":1,"dragon":1,"dark":1,"steel":1,"fairy":1},"ice":{"normal":1,"fire":2,"water":1,"electric":1,"grass":1,"ice":0.5,"fighting":2,"poison":1,"ground":1,"flying":1,"psychic":1,"bug":1,"rock":2,"ghost":1,"dragon":1,"dark":1,"steel":2,"fairy":1},"normal":{"normal":1,"fire":1,"water":1,"electric":1,"grass":1,"ice":1,"fighting":2,"poison":1,"ground":1,"flying":1,"psychic":1,"bug":1,"rock":1,"ghost":0,"dragon":1,"dark":1,"steel":1,"fairy":1},"poison":{"normal":1,"fire":1,"water":1,"electric":1,"grass":0.5,"ice":1,"fighting":0.5,"poison":0.5,"ground":2,"flying":1,"psychic":2,"bug":0.5,"rock":1,"ghost":1,"dragon":1,"dark":1,"steel":1,"fairy":0.5},"psychic":{"normal":1,"fire":1,"water":1,"electric":1,"grass":1,"ice":1,"fighting":0.5,"poison":1,"ground":1,"flying":1,"psychic":0.5,"bug":2,"rock":1,"ghost":2,"dragon":1,"dark":2,"steel":1,"fairy":1},"rock":{"normal":0.5,"fire":0.5,"water":2,"electric":1,"grass":2,"ice":1,"fighting":2,"poison":0.5,"ground":2,"flying":0.5,"psychic":1,"bug":1,"rock":1,"ghost":1,"dragon":1,"dark":1,"steel":2,"fairy":1},"steel":{"normal":0.5,"fire":2,"water":1,"electric":1,"grass":0.5,"ice":0.5,"fighting":2,"poison":0,"ground":2,"flying":0.5,"psychic":0.5,"bug":0.5,"rock":0.5,"ghost":1,"dragon":0.5,"dark":1,"steel":0.5,"fairy":0.5},"water":{"normal":1,"fire":0.5,"water":0.5,"electric":2,"grass":2,"ice":0.5,"fighting":1,"poison":1,"ground":1,"flying":1,"psychic":1,"bug":1,"rock":1,"ghost":1,"dragon":1,"dark":1,"steel":0.5,"fairy":1}};
+const ALL_TYPES = Object.keys(TYPE_CHART);
+
+// Multiplier a Pokemon with these defending type(s) takes from an
+// attacking move of `atkType` (dual types multiply together, as in the
+// real games -- e.g. Water/Ground takes 0x from Electric since Ground
+// alone is already immune).
+function defendingMultiplier(defTypes, atkType) {
+  let mult = 1;
+  for (const t of defTypes) {
+    const chart = TYPE_CHART[t];
+    if (chart && chart[atkType] !== undefined) mult *= chart[atkType];
+  }
+  return mult;
+}
+
 function typeColor(p) {
   return TYPE_COLORS[(p.types && p.types[0]) || 'normal'] || '#ffcb05';
 }
@@ -1210,7 +1240,7 @@ function megaHtml(p) {
   const rows = p.megaEvolutions.map(m => `
     <div class="mega-row">
       <span class="mega-tag ${m.category}">${MEGA_TAG_LABELS[m.category] || m.category}</span>
-      <span class="mega-item">${m.item}</span>
+      <span class="mega-item">${m.item} <em>(held item &mdash; give it to this Pokemon, don't craft it into gear)</em></span>
       <span class="mega-form">&rarr; ${m.form}</span>
       ${m.ingredients && m.ingredients.length ? `<span class="mega-ingredients">Crafted from: ${m.ingredients.join(', ')}</span>` : ''}
       ${m.note ? `<span class="mega-row-note">${m.note}</span>` : ''}
@@ -1220,7 +1250,7 @@ function megaHtml(p) {
     <div class="mega-section">
       <h4>Mega Evolution</h4>
       ${rows}
-      <p class="mega-note">Hold the matching Mega Stone on this Pokemon and have a Key Stone (a Mega Bracelet/Ring or one of its themed variants) equipped to Mega Evolve it in battle. Most Mega Stones are crafted from a blank Mega Stone plus themed ingredients (shown above); a blank Mega Stone itself comes from mining Mega Stone Crystal in the mod's own structure. See the Guides tab for the full Key Stone/bracelet crafting chain.</p>
+      <p class="mega-note"><b>Two separate items, two separate places:</b> the Mega Stone above is a <b>held item</b> &mdash; give it to this specific Pokemon (open its summary in your party, or open its menu and use the item-assign option, then pick the stone from your inventory) so it's carrying it, the same way you'd give any other held item. Separately, <b>you</b> (the trainer) craft a Key Stone into a Mega Bracelet/Ring (or one of its themed reskins) and wear that in your own accessory slot &mdash; that part only needs doing once, ever, and works for every Pokemon on your team. Both have to be true at the same time in battle for the Mega Evolve option to appear. Most Mega Stones are crafted from a blank Mega Stone plus themed ingredients (shown above); a blank Mega Stone itself comes from mining Mega Stone Crystal in the mod's own structure. See the Guides tab for the full Key Stone/bracelet crafting chain.</p>
     </div>
   `;
 }
@@ -1570,8 +1600,12 @@ function megaGeneralHtml() {
       </div>
     </div>
     <div class="guide-card">
-      <h3>3. Mega Evolve in battle</h3>
-      <p>With the Key Stone item equipped as an accessory and your Pokemon holding its matching Mega Stone, use the Mega Evolve option in battle (bound to a keybind client-side, default listed in-game as "Mega Evolve"). It reverts back to normal at the end of the battle.</p>
+      <h3>3. Give your Pokemon its Mega Stone as a held item</h3>
+      <p>The Mega Stone doesn't get crafted into anything else or equipped on you &mdash; it has to be held by the Pokemon itself, exactly like giving it a Leftovers or a Choice Band. In your party/PC, open that Pokemon's summary screen and use the item-assign slot to give it the stone from your inventory (some versions let you just right-click the Pokemon while holding the item instead). It'll keep holding it in and out of battle until you take it back.</p>
+    </div>
+    <div class="guide-card">
+      <h3>4. Mega Evolve in battle</h3>
+      <p>With your Key Stone accessory worn and that Pokemon holding its matching Mega Stone, a Mega Evolve option shows up in battle alongside its moves &mdash; pick it, then pick the move you want it to use that turn, and it transforms as the move goes off. It reverts back to normal at the end of the battle either way.</p>
     </div>
   `;
 }
@@ -1766,6 +1800,54 @@ const GUIDES = {
   mega: {
     title: 'Mega Evolution',
     html: null, // rendered dynamically by megaGeneralHtml() since it needs MEGA_GENERAL data
+  },
+
+  tms: {
+    title: 'TM Guide',
+    html: `
+      <h2>TM Guide (Cobblemon 1.8.1)</h2>
+      <p class="guide-intro">Technical Machines are still the main way to teach a Pokemon a move it wouldn't otherwise learn &mdash; here's exactly how they work on this version of Cobblemon.</p>
+
+      <div class="guide-card">
+        <h3>TMs are single-use</h3>
+        <p>Each TM is consumed the moment you use it &mdash; one TM teaches one move to one Pokemon, then it's gone. There's no "TR" (Technical Record, multi-use) item in this version; if you want to teach the same move to five different Pokemon, you need five TMs of that move.</p>
+        <p class="guide-note">If the Pokemon you use it on can't learn that move at all, the TM isn't consumed &mdash; you just can't use it on that Pokemon, so it's safe to try.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Crafting a TM: the TM Machine</h3>
+        <p>TMs are printed at a <b>TM Machine</b> block, which you craft from:</p>
+        <table class="guide-table">
+          <tr><th>Item</th><th>Amount</th></tr>
+          <tr><td>Iron Ingot</td><td>2</td></tr>
+          <tr><td>Copper Ingot</td><td>2</td></tr>
+          <tr><td>Tinted Glass</td><td>1</td></tr>
+          <tr><td>Redstone Dust</td><td>1</td></tr>
+        </table>
+        <p>Inside the TM Machine's UI, pick an <b>unlocked</b> recipe, then insert:</p>
+        <ul>
+          <li>1 <b>Blank TM</b> (crafted from 2 Amethyst Shard + 2 Glass, in a 2x2 pattern &mdash; yields 2 Blank TMs per craft)</li>
+          <li>1 matching <b>Type Gem</b> for that move's type</li>
+          <li>Up to 2 more recipe-specific ingredients, depending on the move</li>
+        </ul>
+        <p>The machine "burns" the recipe onto the Blank TM, producing the finished, move-specific TM. It also supports hopper automation if you want to mass-produce a particular TM.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Unlocking a TM recipe</h3>
+        <p>You can't craft a TM recipe you haven't unlocked yet. Two ways to unlock one:</p>
+        <ul>
+          <li><b>Have a Pokemon that already knows the move</b> &mdash; catching or breeding one that knows it unlocks that move's TM recipe automatically.</li>
+          <li><b>Find the physical TM disc and use a Data Monitor.</b> TM discs turn up in <b>Gimmighoul Chests</b>, found in ancient ruins structures scattered around the world. Bring a found TM disc to a <b>Data Monitor</b> block (also found in those same ruins) and insert it to permanently unlock that move's recipe for crafting, even after the disc itself is used up.</li>
+        </ul>
+      </div>
+
+      <div class="guide-card">
+        <h3>Teaching the move</h3>
+        <p>Once you've got a finished TM, use it on a Pokemon in your party the same way you'd use most Cobblemon items on a Pokemon (open its summary/party entry and apply the item, or use it directly on the Pokemon). If the move fits that species' learnset, it's taught immediately and the TM is consumed.</p>
+        <p class="guide-note">This site's move list for every Pokemon (on its dex entry, and in the Team Builder) already separates level-up, egg, tutor, and <b>TM</b> moves, so you can check whether a move you want is even TM-teachable to that species before you go farming ingredients for it.</p>
+      </div>
+    `,
   },
 };
 
@@ -2061,6 +2143,7 @@ document.getElementById('team-clear').addEventListener('click', () => {
   TEAM = [null, null, null, null, null, null];
   renderTeamBuilder();
   document.getElementById('team-export-panel').style.display = 'none';
+  document.getElementById('team-report-panel').style.display = 'none';
 });
 
 function exportSlotToShowdown(slot) {
@@ -2090,10 +2173,219 @@ function exportSlotToShowdown(slot) {
   return lines.join('\n');
 }
 
+// Maps our short stat keys to Cobblemon's own baseStats field names.
+const BASE_STAT_KEY = { hp: 'hp', atk: 'attack', def: 'defence', spa: 'special_attack', spd: 'special_defence', spe: 'speed' };
+
+// The standard stat formula every mainline Pokemon game (and this mod's
+// battle engine, since it's built on the real Showdown simulator) uses,
+// so a team's actual in-battle stats -- not just base stats -- can be
+// compared. HP has its own formula; the other five share one, with the
+// nature's +10%/-10% applied last.
+function calcStat(base, iv, ev, level, statKey, nature) {
+  const core = Math.floor((2 * base + iv + Math.floor(ev / 4)) * level / 100);
+  if (statKey === 'hp') return core + level + 10;
+  let stat = core + 5;
+  const n = NATURES[nature] || {};
+  if (n.plus === statKey) stat = Math.floor(stat * 1.1);
+  else if (n.minus === statKey) stat = Math.floor(stat * 0.9);
+  return stat;
+}
+
+function slotComputedStats(slot, tb) {
+  const out = {};
+  for (const [k] of STAT_LABELS) {
+    out[k] = calcStat(tb.baseStats[BASE_STAT_KEY[k]], slot.ivs[k], slot.evs[k], slot.level, k, slot.nature);
+  }
+  return out;
+}
+
+// A short "how to get this Pokemon" writeup for one filled team slot,
+// reusing the exact same spawn data (and biome-name resolution) as the
+// Pokedex detail view, plus its evolution line and, if the player already
+// gave it a held item that happens to be one of its own Mega Stones, a
+// reminder of what else Mega Evolving it needs.
+function obtainHtml(slot) {
+  const p = DEX_BY_ID[slot.speciesId];
+  const lines = [];
+
+  const preds = EVOLVES_FROM[p.id];
+  if (preds && preds.length) {
+    const parts = preds.map(e => {
+      const from = DEX_BY_ID[e.from];
+      return `${from ? from.name : e.from}${e.description ? ` (${e.description})` : ''}`;
+    });
+    lines.push(`Evolve it from ${parts.join(' or ')}.`);
+  }
+
+  if (p.no_spawn) {
+    lines.push('Not currently obtainable through a wild spawn on this server &mdash; ask staff if you need one.');
+  } else if (p.spawns && p.spawns.length) {
+    const rows = p.spawns
+      .map(s => {
+        const names = new Set();
+        for (const b of (s.biomes || [])) for (const n of namesForRef(b)) names.add(n);
+        const condLabels = [...conditionLabels(s.conditions, false), ...conditionLabels(s.conditions && s.conditions.not, true)];
+        return {
+          bucket: s.bucket, level: s.level, biomes: [...names].sort(),
+          hadBiomes: (s.biomes || []).length > 0, condLabels,
+        };
+      })
+      .filter(s => !s.hadBiomes || s.biomes.length > 0);
+    // Several rows can resolve to the exact same displayed line (e.g. a
+    // "near water" row and a separate day/night-only row that share the
+    // same biome list) -- dedupe on the rendered text so the list doesn't
+    // repeat itself.
+    const seenLines = new Set();
+    for (const r of rows) {
+      const where = r.biomes.length ? r.biomes.join(', ') : 'any biome';
+      const lvl = r.level ? ` at level ${r.level[0]}-${r.level[1]}` : '';
+      const cond = r.condLabels.length ? ` (${r.condLabels.join(', ').toLowerCase()})` : '';
+      const line = `Wild spawn (${r.bucket} rate) in ${where}${lvl}${cond}.`;
+      if (seenLines.has(line)) continue;
+      seenLines.add(line);
+      lines.push(line);
+    }
+  }
+
+  if (!lines.length) {
+    lines.push("No wild spawn data found for it &mdash; it's likely evolution, breeding, or event only.");
+  }
+
+  if (slot.item && p.megaEvolutions) {
+    const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const heldMega = p.megaEvolutions.find(m => m.itemId && normalize(m.itemId.split(':').pop()) === normalize(slot.item));
+    if (heldMega) {
+      lines.push(`It's already holding ${heldMega.item} &mdash; wear a Key Stone (Mega Bracelet/Ring) yourself and it can Mega Evolve into ${heldMega.form} in battle. See the Mega Evolution guide tab for how to craft one.`);
+    }
+  }
+
+  return `
+    <div class="guide-card">
+      <h4 style="margin-top:0;">${p.name}${p.regionalForm ? ` (${p.regionalForm})` : ''}</h4>
+      <ul style="margin:6px 0 0; padding-left:18px;">${lines.map(l => `<li>${l}</li>`).join('')}</ul>
+    </div>
+  `;
+}
+
+// Deterministic, rule-based team analysis: real type-chart math and the
+// real stat formula against the team's actual EVs/IVs/level/nature, not a
+// generative AI guess. Covers defensive weaknesses (does 3+ of the team
+// share an unresisted weakness?), offensive coverage (which types can no
+// chosen move touch for super-effective damage?), and a speed ranking.
+function teamAnalysisHtml(team) {
+  const filled = team.filter(Boolean);
+  if (!filled.length) return '<p>Add at least one Pokemon to your team first.</p>';
+
+  const entries = filled.map(slot => ({
+    slot,
+    p: DEX_BY_ID[slot.speciesId],
+    tb: TB_DATA[slot.speciesId],
+  }));
+
+  // ---- Defensive weaknesses: how many teammates are hit for 2x+ by each
+  // attacking type, and does anyone on the team resist or is immune to it?
+  const weakRows = ALL_TYPES.map(atkType => {
+    let weakCount = 0, resistOrImmuneCount = 0;
+    for (const { p } of entries) {
+      const mult = defendingMultiplier(p.types, atkType);
+      if (mult >= 2) weakCount++;
+      else if (mult < 1) resistOrImmuneCount++;
+    }
+    return { atkType, weakCount, resistOrImmuneCount };
+  }).filter(r => r.weakCount > 0).sort((a, b) => b.weakCount - a.weakCount);
+
+  const holes = weakRows.filter(r => r.weakCount >= 3 && r.resistOrImmuneCount === 0);
+
+  const weaknessHtml = weakRows.length ? `
+    <table class="guide-table">
+      <tr><th>Attacking type</th><th>Teammates weak to it</th><th>Teammates resisting/immune</th></tr>
+      ${weakRows.map(r => `<tr><td>${r.atkType}</td><td>${r.weakCount} / ${entries.length}</td><td>${r.resistOrImmuneCount}</td></tr>`).join('')}
+    </table>
+  ` : '<p>No shared weaknesses found across your current team\'s types.</p>';
+
+  const holesHtml = holes.length
+    ? `<p class="guide-note"><b>Team-wide hole:</b> ${holes.map(h => h.atkType).join(', ')} &mdash; ${holes.length > 1 ? 'these are' : 'this is'} super-effective against ${holes.length > 1 ? 'several' : 'a'} teammate${holes.length > 1 ? 's' : ''} and nobody on the team resists or is immune to ${holes.length > 1 ? 'them' : 'it'}. Worth adding a teammate that resists ${holes.length > 1 ? 'one of these' : 'it'} or a move that discourages switching one in.</p>`
+    : '';
+
+  // ---- Offensive coverage: which attacking types can at least one
+  // teammate's *selected* damaging moves hit for 2x+? Only counts moves
+  // actually picked in a slot, since we can't assume which 4 of a
+  // learnset someone will run.
+  const coveredTypes = new Set();
+  let anyMoveChosen = false;
+  for (const { slot, tb } of entries) {
+    for (const moveId of slot.moves) {
+      if (!moveId) continue;
+      anyMoveChosen = true;
+      const info = TB_MOVES[moveId];
+      if (!info || info.category === 'Status' || !info.power) continue;
+      for (const defType of ALL_TYPES) {
+        if (defendingMultiplier([defType], info.type.toLowerCase()) >= 2) coveredTypes.add(defType);
+      }
+    }
+  }
+  const uncovered = ALL_TYPES.filter(t => !coveredTypes.has(t));
+  const coverageHtml = !anyMoveChosen
+    ? '<p class="guide-note">Pick some damaging moves on your team first to see what type coverage you actually have.</p>'
+    : `<p>Your team's chosen damaging moves hit <b>${coveredTypes.size} / ${ALL_TYPES.length}</b> defending types super-effectively.</p>` +
+      (uncovered.length ? `<p class="guide-note">No chosen move is super-effective against: ${uncovered.join(', ')}.</p>` : '<p class="guide-note">Full type coverage across every defending type &mdash; nice.</p>');
+
+  // ---- Speed ranking, using each slot's actual level/EVs/IVs/nature.
+  const speedRanked = entries.map(({ slot, p, tb }) => ({
+    name: p.name, speed: slotComputedStats(slot, tb).spe,
+  })).sort((a, b) => b.speed - a.speed);
+  const speedHtml = `
+    <table class="guide-table">
+      <tr><th>Pokemon</th><th>Speed stat</th></tr>
+      ${speedRanked.map(s => `<tr><td>${s.name}</td><td>${s.speed}</td></tr>`).join('')}
+    </table>
+    <p class="guide-note">Highest goes first (before priority moves, Trick Room, or a speed-changing ability/item, which this can't see). If your whole team is slow, a Trick Room sweeper or priority moves (Quick Attack, etc.) matter more than raw Speed EVs.</p>
+  `;
+
+  return `
+    <div class="guide-card">
+      <h3>Defensive weaknesses</h3>
+      ${weaknessHtml}
+      ${holesHtml}
+    </div>
+    <div class="guide-card">
+      <h3>Offensive type coverage</h3>
+      ${coverageHtml}
+    </div>
+    <div class="guide-card">
+      <h3>Speed order</h3>
+      ${speedHtml}
+    </div>
+  `;
+}
+
+function teamReportHtml(team) {
+  const filled = team.filter(Boolean);
+  if (!filled.length) return '<p>Add at least one Pokemon to your team first.</p>';
+  return `
+    <p class="guide-intro">This is worked out from this server's real spawn/mega data and the actual type chart &amp; stat formula the battle engine uses &mdash; not a chatbot guessing, so it won't make things up, but it also can't see abilities/items/weather/Trick Room the way a real matchup would.</p>
+    <h3 style="margin-top:0;">How to get this team</h3>
+    ${filled.map(obtainHtml).join('')}
+    <h3>Using this team in battle</h3>
+    ${teamAnalysisHtml(team)}
+  `;
+}
+
+document.getElementById('team-report-btn').addEventListener('click', () => {
+  document.getElementById('team-report-content').innerHTML = teamReportHtml(TEAM);
+  document.getElementById('team-export-panel').style.display = 'none';
+  document.getElementById('team-report-panel').style.display = '';
+  document.getElementById('team-report-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+document.getElementById('team-report-close').addEventListener('click', () => {
+  document.getElementById('team-report-panel').style.display = 'none';
+});
+
 document.getElementById('team-export').addEventListener('click', () => {
   const filled = TEAM.filter(Boolean);
   const text = filled.map(exportSlotToShowdown).join('\n\n');
   document.getElementById('team-export-text').value = text || '(Add at least one Pokemon first.)';
+  document.getElementById('team-report-panel').style.display = 'none';
   document.getElementById('team-export-panel').style.display = '';
   document.getElementById('team-export-text').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
@@ -2180,8 +2472,8 @@ document.addEventListener('click', e => {
   const t = e.target;
   if (t.closest('#sfx-toggle, .speak-btn')) return; // these already play their own sound
   if (t.closest('.card, .evo-tree-name[data-goto]')) { sfxSelect(); return; }
-  if (t.closest('.sheet-close, .team-slot-remove')) { sfxBack(); return; }
-  if (t.closest('#team-export, #team-export-copy')) { sfxConfirm(); return; }
+  if (t.closest('.sheet-close, .team-slot-remove, #team-export-close, #team-report-close')) { sfxBack(); return; }
+  if (t.closest('#team-export, #team-export-copy, #team-report-btn')) { sfxConfirm(); return; }
   if (t.closest('button, .main-nav-btn, .guide-tab-btn, .icon-btn')) { sfxClick(); }
 }, true);
 
