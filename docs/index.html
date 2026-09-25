@@ -848,6 +848,7 @@
   <button type="button" class="main-nav-btn" id="nav-guides" data-view="guides">📚 Guides</button>
   <button type="button" class="main-nav-btn" id="nav-team" data-view="team">🛠️ Team Builder</button>
   <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+  <button type="button" id="sfx-toggle" class="icon-btn" aria-label="Toggle sound effects" title="Toggle sound effects">🔊</button>
 </div>
 
 <div id="dex-view">
@@ -1326,29 +1327,82 @@ if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = populateVoiceList;
 }
 
-// A couple of quick synthesized electronic "beeps" (no recorded audio,
-// just tones from the Web Audio API) played before speaking, for a bit of
-// talking-gadget personality.
-function playChime() {
+// A little library of synthesized "retro game gadget" blips (no recorded
+// audio, just square-wave tones from the Web Audio API -- nothing here is
+// a real Pokemon sound effect, just an 8-bit-handheld-inspired UI voice).
+// One shared AudioContext is reused rather than made-and-closed per call,
+// since it's now used for every button press instead of just read-aloud.
+let sfxCtx = null;
+
+function sfxEnabled() {
+  try { return localStorage.getItem('pokedex-sfx') !== 'off'; } catch (e) { return true; }
+}
+
+function getSfxCtx() {
+  if (!sfxEnabled()) return null;
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return;
-    const ctx = new Ctx();
-    [880, 1175].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      const start = ctx.currentTime + i * 0.09;
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(0.06, start + 0.01);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.08);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(start);
-      osc.stop(start + 0.09);
-    });
-    setTimeout(() => ctx.close(), 400);
-  } catch (e) {}
+    if (!Ctx) return null;
+    if (!sfxCtx) sfxCtx = new Ctx();
+    if (sfxCtx.state === 'suspended') sfxCtx.resume();
+    return sfxCtx;
+  } catch (e) { return null; }
+}
+
+// Plays one short square-wave blip: `at` seconds from now, `dur` seconds long.
+function blip(ctx, freq, at, dur, vol) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  const start = ctx.currentTime + at;
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.exponentialRampToValueAtTime(vol, start + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + dur + 0.02);
+}
+
+// The chime used before speech (kept as its own name since speak() already
+// calls it) -- a bright two-note "beep-boop".
+function playChime() {
+  const ctx = getSfxCtx();
+  if (!ctx) return;
+  blip(ctx, 880, 0, 0.08, 0.06);
+  blip(ctx, 1175, 0.09, 0.08, 0.06);
+}
+
+// Generic UI click -- short, plain, for ordinary buttons and tabs.
+function sfxClick() {
+  const ctx = getSfxCtx();
+  if (!ctx) return;
+  blip(ctx, 1300, 0, 0.05, 0.05);
+}
+
+// Selecting/opening something (a dex card, an evolution link) -- a rising
+// two-note blip, like a menu cursor confirming a choice.
+function sfxSelect() {
+  const ctx = getSfxCtx();
+  if (!ctx) return;
+  blip(ctx, 740, 0, 0.06, 0.06);
+  blip(ctx, 1180, 0.05, 0.07, 0.06);
+}
+
+// Closing/removing something -- the same idea in reverse, falling pitch.
+function sfxBack() {
+  const ctx = getSfxCtx();
+  if (!ctx) return;
+  blip(ctx, 520, 0, 0.05, 0.05);
+  blip(ctx, 340, 0.04, 0.06, 0.05);
+}
+
+// A positive "success" cue -- three-note rising arpeggio, for exporting a
+// team, copying to clipboard, etc.
+function sfxConfirm() {
+  const ctx = getSfxCtx();
+  if (!ctx) return;
+  [660, 880, 1320].forEach((freq, i) => blip(ctx, freq, i * 0.07, 0.09, 0.06));
 }
 
 // Cancels any in-progress speech and speaks the given text aloud, toggling
@@ -2107,6 +2161,29 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
   applyTheme(current === 'dark' ? 'light' : 'dark');
 });
+
+// ---- Sound effects on/off ----
+(function initSfxToggle() {
+  const btn = document.getElementById('sfx-toggle');
+  btn.textContent = sfxEnabled() ? '🔊' : '🔇';
+  btn.addEventListener('click', () => {
+    const next = sfxEnabled() ? 'off' : 'on';
+    try { localStorage.setItem('pokedex-sfx', next); } catch (e) {}
+    btn.textContent = next === 'off' ? '🔇' : '🔊';
+    if (next === 'on') sfxClick(); // quick confirmation blip that sound is back on
+  });
+})();
+
+// One delegated listener plays the right retro blip for whatever was
+// clicked, instead of wiring a sound call into every individual button.
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.closest('#sfx-toggle, .speak-btn')) return; // these already play their own sound
+  if (t.closest('.card, .evo-tree-name[data-goto]')) { sfxSelect(); return; }
+  if (t.closest('.sheet-close, .team-slot-remove')) { sfxBack(); return; }
+  if (t.closest('#team-export, #team-export-copy')) { sfxConfirm(); return; }
+  if (t.closest('button, .main-nav-btn, .guide-tab-btn, .icon-btn')) { sfxClick(); }
+}, true);
 
 load();
 </script>
