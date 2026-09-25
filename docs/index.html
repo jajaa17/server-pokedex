@@ -249,41 +249,37 @@ const SPRITE_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#9096a6" stroke-width="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke="#9096a6" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#16181d" stroke="#9096a6" stroke-width="1.5"/></svg>`
 );
 
-// Turns a spawn condition biome tag like "#cobblemon:is_end" or
-// "#cobblemon:has_block/mud" into a readable label, e.g. "End", "Mud (block)".
-function prettyBiome(tag) {
-  let s = tag.replace(/^#/, '');
-  const colon = s.indexOf(':');
-  if (colon !== -1) s = s.slice(colon + 1);
-  let suffix = '';
-  if (s.startsWith('has_block/')) { s = s.slice('has_block/'.length); suffix = ' (block)'; }
-  else if (s.startsWith('is_')) { s = s.slice('is_'.length); }
-  s = s.replace(/[_/]/g, ' ').trim();
-  s = s.replace(/\b\w/g, c => c.toUpperCase());
-  return s + suffix;
+// Maps each raw spawn-condition biome ref (e.g. "#cobblemon:is_end" or a
+// literal like "minecraft:frozen_river") to the real, concrete biome names
+// it resolves to on this server's actual mod set (vanilla + Terralith;
+// Tectonic reshapes terrain but adds no new biome IDs of its own). Built
+// offline by tools/build_biome_names.py from the Cobblemon/Terralith jars
+// plus vanilla's own tag data -- see that script for how. Any ref that
+// only ever pointed at an uninstalled biome mod (Aether, Biomes O'Plenty,
+// The Bumblezone, etc.) resolves to an empty list here.
+let BIOME_NAMES = {};
+
+function namesForRef(ref) {
+  return BIOME_NAMES[ref] || [];
 }
 
-// Biome mods not installed on the server, so their compat biomes never
-// actually spawn anything here even though Cobblemon's spawn files list
-// them for compat. Filtered out everywhere biomes are shown or filtered.
-const EXCLUDED_BIOME_NAMESPACES = new Set(['aether', 'the_bumblezone', 'biomesoplenty']);
-
-function isAllowedBiome(tag) {
-  const ns = tag.replace(/^#/, '').split(':')[0];
-  return !EXCLUDED_BIOME_NAMESPACES.has(ns);
-}
-
-function biomeTags(p) {
+// All real biome names a Pokemon can actually be found in on this server,
+// across every one of its spawn entries.
+function biomeNames(p) {
   const set = new Set();
   for (const s of (p.spawns || [])) {
-    for (const b of (s.biomes || [])) if (isAllowedBiome(b)) set.add(b);
+    for (const b of (s.biomes || [])) for (const name of namesForRef(b)) set.add(name);
   }
   return set;
 }
 
 async function load() {
-  const res = await fetch('pokedex.json');
-  DEX = await res.json();
+  const [dexRes, biomeRes] = await Promise.all([
+    fetch('pokedex.json'),
+    fetch('biome_names.json'),
+  ]);
+  DEX = await dexRes.json();
+  BIOME_NAMES = await biomeRes.json();
 
   const types = [...new Set(DEX.flatMap(p => p.types))].sort();
   const typeSelect = document.getElementById('type-filter');
@@ -295,13 +291,13 @@ async function load() {
   }
 
   const biomeSet = new Set();
-  for (const p of DEX) for (const b of biomeTags(p)) biomeSet.add(b);
-  const biomes = [...biomeSet].sort((a, b) => prettyBiome(a).localeCompare(prettyBiome(b)));
+  for (const p of DEX) for (const name of biomeNames(p)) biomeSet.add(name);
+  const biomes = [...biomeSet].sort((a, b) => a.localeCompare(b));
   const biomeSelect = document.getElementById('biome-filter');
   for (const b of biomes) {
     const opt = document.createElement('option');
     opt.value = b;
-    opt.textContent = prettyBiome(b);
+    opt.textContent = b;
     biomeSelect.appendChild(opt);
   }
 
@@ -316,7 +312,7 @@ function render() {
 
   let list = DEX.filter(p => {
     if (typeFilter && !p.types.includes(typeFilter)) return false;
-    if (biomeFilter && !biomeTags(p).has(biomeFilter)) return false;
+    if (biomeFilter && !biomeNames(p).has(biomeFilter)) return false;
     if (!q) return true;
     return p.name.toLowerCase().includes(q) || String(p.dex).includes(q);
   });
@@ -364,27 +360,32 @@ function openDetail(p) {
   } else if (!p.spawns.length) {
     spawnHtml = '<p class="no-spawn-text">No wild spawn data found. This Pokemon may only be obtainable by evolution, breeding, or a special event.</p>';
   } else {
-    // Drop a spawn row entirely if every biome on it belonged to a mod that
-    // isn't installed (Aether/Bumblezone/BiomesOPlenty compat entries) —
-    // keep rows that had no biome restriction ("any biome") untouched.
+    // Resolve each spawn row's raw biome refs down to real biome names.
+    // Drop a row entirely if every ref on it only ever pointed at a mod
+    // that isn't installed (Aether/Bumblezone/BiomesOPlenty/etc. compat
+    // entries) — keep rows that had no biome restriction ("any biome").
     const rows = p.spawns
-      .map(s => ({
-        bucket: s.bucket,
-        level: s.level,
-        biomes: (s.biomes || []).filter(isAllowedBiome),
-        hadBiomes: (s.biomes || []).length > 0,
-      }))
+      .map(s => {
+        const names = new Set();
+        for (const b of (s.biomes || [])) for (const n of namesForRef(b)) names.add(n);
+        return {
+          bucket: s.bucket,
+          level: s.level,
+          biomes: [...names].sort(),
+          hadBiomes: (s.biomes || []).length > 0,
+        };
+      })
       .filter(s => !s.hadBiomes || s.biomes.length > 0);
 
     if (!rows.length) {
-      spawnHtml = '<p class="no-spawn-text">This Pokemon only had compat spawns for biome mods that aren\'t installed on this server (Aether, Biomes O\'Plenty, The Bumblezone). It may only be obtainable by evolution, breeding, or a special event.</p>';
+      spawnHtml = '<p class="no-spawn-text">This Pokemon only had compat spawns for biome mods that aren\'t installed on this server. It may only be obtainable by evolution, breeding, or a special event.</p>';
     } else {
       spawnHtml = rows.map(s => `
         <div class="spawn-row">
           <span class="bucket">${s.bucket}</span>
           <div class="biomes">${
             s.biomes.length
-              ? s.biomes.map(b => `<span class="biome-badge">${prettyBiome(b)}</span>`).join('')
+              ? s.biomes.map(b => `<span class="biome-badge">${b}</span>`).join('')
               : '<span class="biome-badge">Any biome</span>'
           }</div>
           ${s.level ? `<div class="level">Level ${s.level[0]}-${s.level[1]}</div>` : ''}
