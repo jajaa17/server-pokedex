@@ -2038,6 +2038,38 @@ function gigantamaxHtml(p) {
   `;
 }
 
+// Other real, in-game-selectable alternate formes that share this same
+// flat dex entry (Therian formes, appliance Rotoms, Arceus plates, etc. --
+// see other_forms_spec.json). Unlike Mega/Gmax, these don't all use the
+// same mechanic, so each row spells out exactly how to get/switch into
+// it (verified against this server's own mod data -- crafting recipes,
+// evolution requirements, feature flags -- rather than assumed from the
+// mainline games, which sometimes do this differently or not at all).
+function otherFormsHtml(p) {
+  if (!p.otherForms || !p.otherForms.length) return '';
+  const rows = p.otherForms.map((f, i) => {
+    const typeChange = f.types && f.types.join(',') !== p.types.join(',')
+      ? `<span class="mega-row-note">Type: ${f.types.join('/')}</span>` : '';
+    const preview = f.spriteId
+      ? `<button type="button" class="mega-preview-btn" data-other-index="${i}" title="Preview this form's sprite">Preview sprite</button>` : '';
+    return `
+    <div class="mega-row">
+      <span class="mega-tag${f.battleOnly ? ' bonus' : ' canon'}">${f.battleOnly ? 'Battle-only' : 'Form'}</span>
+      <span class="mega-form">${f.form}</span>
+      ${typeChange}
+      ${preview}
+      <span class="mega-row-note">${f.obtain || 'How to get this form isn\'t confirmed from this server\'s own data -- ask staff.'}</span>
+    </div>
+  `;
+  }).join('');
+  return `
+    <div class="mega-section">
+      <h4>Alternate Forms</h4>
+      ${rows}
+    </div>
+  `;
+}
+
 // A clickable strip of small sprite thumbnails (base form + any Mega/Gmax
 // forms this Pokemon has a real sprite id for) shown at the top of its
 // detail sheet, so switching the big sprite between them is one click.
@@ -2403,6 +2435,7 @@ function openDetail(p) {
       ${mechanicsHtml(p)}
       ${megaHtml(p)}
       ${gigantamaxHtml(p)}
+      ${otherFormsHtml(p)}
       ${evolutionHtml(p)}
       <div style="margin-top:14px;">${spawnHtml}</div>
       ${snackTipsHtml(p)}
@@ -2431,7 +2464,11 @@ function openDetail(p) {
       sheet.querySelectorAll('.form-thumb').forEach(t => t.classList.remove('active'));
       const matchingThumb = btn.classList.contains('form-thumb')
         ? btn
-        : sheet.querySelector(btn.dataset.gmax !== undefined ? '.form-thumb[data-gmax]' : `.form-thumb[data-mega-index="${btn.dataset.megaIndex}"]`);
+        : sheet.querySelector(
+            btn.dataset.gmax !== undefined ? '.form-thumb[data-gmax]'
+            : btn.dataset.otherIndex !== undefined ? `.form-thumb[data-other-index="${btn.dataset.otherIndex}"]`
+            : `.form-thumb[data-mega-index="${btn.dataset.megaIndex}"]`
+          );
       if (matchingThumb) matchingThumb.classList.add('active');
       else sheet.querySelector('.form-thumb[data-form-base]')?.classList.remove('active');
     });
