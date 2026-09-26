@@ -1315,7 +1315,7 @@ function megaHtml(p) {
   const rows = p.megaEvolutions.map(m => `
     <div class="mega-row">
       <span class="mega-tag ${m.category}">${MEGA_TAG_LABELS[m.category] || m.category}</span>
-      <span class="mega-item">${m.item} <em>(held item &mdash; give it to this Pokemon, don't craft it into gear)</em></span>
+      <span class="mega-item">${m.item}</span>
       <span class="mega-form">&rarr; ${m.form}</span>
       ${m.ingredients && m.ingredients.length ? `<span class="mega-ingredients">Crafted from: ${m.ingredients.join(', ')}</span>` : ''}
       ${m.note ? `<span class="mega-row-note">${m.note}</span>` : ''}
@@ -1325,7 +1325,7 @@ function megaHtml(p) {
     <div class="mega-section">
       <h4>Mega Evolution</h4>
       ${rows}
-      <p class="mega-note"><b>Two separate items, two separate places:</b> the Mega Stone above is a <b>held item</b> &mdash; give it to this specific Pokemon (open its summary in your party, or open its menu and use the item-assign option, then pick the stone from your inventory) so it's carrying it, the same way you'd give any other held item. Separately, <b>you</b> (the trainer) craft a Key Stone into a Mega Bracelet/Ring (or one of its themed reskins) and wear that in your own accessory slot &mdash; that part only needs doing once, ever, and works for every Pokemon on your team. Both have to be true at the same time in battle for the Mega Evolve option to appear. Most Mega Stones are crafted from a blank Mega Stone plus themed ingredients (shown above); a blank Mega Stone itself comes from mining Mega Stone Crystal in the mod's own structure. See the Guides tab for the full Key Stone/bracelet crafting chain.</p>
+      <p class="mega-note">Held item &mdash; give it to this Pokemon, plus your own Key Stone accessory worn separately. Full how-to: Guides &rarr; Mega Evolution.</p>
     </div>
   `;
 }
