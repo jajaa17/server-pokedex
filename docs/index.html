@@ -1823,10 +1823,22 @@ function groupSetsByTier(sets) {
 function buildFormsList(p, entry) {
   const forms = [];
   if (!entry) return forms;
-  if (entry.base) forms.push({ label: `${p.name} (Base Form)`, gen: entry.base.gen, sets: entry.base.sets });
-  if (entry.mega) for (const m of entry.mega) forms.push({ label: m.form, gen: m.gen, sets: m.sets });
-  if (entry.gigantamax) forms.push({ label: `Gigantamax ${p.name}`, gen: entry.gigantamax.gen, sets: entry.gigantamax.sets });
-  if (entry.altForms) for (const a of entry.altForms) forms.push({ label: a.form, gen: a.gen, sets: a.sets });
+  if (entry.base) forms.push({ label: `${p.name} (Base Form)`, gen: entry.base.gen, sets: entry.base.sets, spriteId: null, types: p.types });
+  if (entry.mega) for (const m of entry.mega) {
+    // p.megaEvolutions carries this form's real types (Mega Charizard X is
+    // Fire/Dragon, not Fire/Flying) -- matched by form label since the
+    // smogon_sets.json mega entry was built directly from that same array.
+    const meMatch = (p.megaEvolutions || []).find(me => me.form === m.form);
+    forms.push({ label: m.form, gen: m.gen, sets: m.sets, spriteId: m.spriteId || null, types: (meMatch && meMatch.types) || p.types });
+  }
+  if (entry.gigantamax) forms.push({ label: `Gigantamax ${p.name}`, gen: entry.gigantamax.gen, sets: entry.gigantamax.sets, spriteId: entry.gigantamax.spriteId || null, types: p.types });
+  if (entry.altForms) for (const a of entry.altForms) {
+    // p.otherForms carries this alt form's real types, joined on the same
+    // smogonKey/smogonName string both files always share (see
+    // build_other_forms.py / build_smogon_sets.js).
+    const ofMatch = (p.otherForms || []).find(of => of.smogonKey === a.smogonName);
+    forms.push({ label: a.form, gen: a.gen, sets: a.sets, spriteId: a.spriteId || null, types: (ofMatch && ofMatch.types) || p.types });
+  }
   return forms;
 }
 
@@ -1840,6 +1852,27 @@ let BUILD_SHEET_FORMS = [];
 let BUILD_SHEET_FORM_IDX = 0;
 let BUILD_SHEET_TIER = null;
 
+// Mirrors the Pokedex sheet's selectForm(): swaps the sprite, form label
+// and type badges in the Builds sheet header to match whichever form tab
+// is currently selected, so a build for e.g. Mega Charizard Y actually
+// shows Charizard's Mega Y sprite and Fire/Flying typing rather than the
+// base form's the whole time.
+function selectBuildForm(p, formData) {
+  const sheet = document.getElementById('builds-sheet');
+  const img = sheet.querySelector('#build-detail-sprite');
+  if (img) {
+    img.onerror = function () { this.onerror = null; this.src = SPRITE_FALLBACK; };
+    img.src = spriteUrl(p, { overrideId: formData ? formData.spriteId : null });
+  }
+  const labelEl = sheet.querySelector('#build-detail-form-label');
+  if (labelEl) labelEl.textContent = (formData && BUILD_SHEET_FORMS.length > 1) ? formData.label : '';
+  const typesEl = sheet.querySelector('#build-detail-types');
+  if (typesEl) {
+    const types = (formData && formData.types) || p.types;
+    typesEl.innerHTML = types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('');
+  }
+}
+
 function renderBuildSheetBody() {
   const content = document.getElementById('build-sheet-content');
   const forms = BUILD_SHEET_FORMS;
@@ -1849,6 +1882,7 @@ function renderBuildSheetBody() {
   }
 
   const form = forms[BUILD_SHEET_FORM_IDX] || forms[0];
+  if (CURRENT_BUILD_POKEMON) selectBuildForm(CURRENT_BUILD_POKEMON, form);
   const tierGroups = groupSetsByTier(form.sets);
   if (!tierGroups.some(g => g.tier === BUILD_SHEET_TIER)) BUILD_SHEET_TIER = tierGroups[0].tier;
   const activeGroup = tierGroups.find(g => g.tier === BUILD_SHEET_TIER);
@@ -1882,11 +1916,12 @@ function openBuildDetail(p) {
   sheet.innerHTML = `
     <div class="sheet-screen">
       <button class="sheet-close" aria-label="Close">&times;</button>
-      <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+      <img id="build-detail-sprite" class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
       <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
       ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
       <h2>${p.name}</h2>
-      <div class="types">
+      <span id="build-detail-form-label" class="form-label"></span>
+      <div class="types" id="build-detail-types">
         ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
       </div>
     </div>
