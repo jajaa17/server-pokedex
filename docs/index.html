@@ -190,6 +190,29 @@
     justify-content: center;
   }
   .icon-btn:hover { border-color: var(--accent); }
+  #shiny-toggle.active {
+    background: linear-gradient(135deg, #ffd76a, #ffb347);
+    border-color: #ffb347;
+    color: #4a3200;
+    box-shadow: 0 0 0 3px rgba(255,183,71,0.35), 0 2px 0 rgba(0,0,0,0.12);
+    animation: shiny-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes shiny-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(255,183,71,0.35), 0 2px 0 rgba(0,0,0,0.12); }
+    50% { box-shadow: 0 0 0 6px rgba(255,183,71,0.15), 0 2px 0 rgba(0,0,0,0.12); }
+  }
+  .shiny-banner {
+    display: none;
+    background: linear-gradient(90deg, #ffe9b0, #ffd76a, #ffe9b0);
+    color: #4a3200;
+    text-align: center;
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.03em;
+    padding: 7px 10px;
+    text-transform: uppercase;
+  }
+  body.shiny-mode .shiny-banner { display: block; }
   input[type="search"], select {
     background: var(--panel);
     border: 2px solid var(--line);
@@ -758,6 +781,51 @@
   .sheet h2 { margin: 4px 0 2px; font-size: 24px; font-weight: 800; }
   .sheet .dex { display: inline-block; margin-bottom: 6px; }
   .sheet .types { justify-content: center; margin-top: 6px; }
+  .form-label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: -2px;
+    margin-bottom: 4px;
+    min-height: 15px;
+  }
+  .form-thumbs {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 2px 0 6px;
+  }
+  .form-thumb {
+    width: 40px;
+    height: 40px;
+    padding: 2px;
+    border-radius: 10px;
+    border: 2px solid var(--line);
+    background: var(--panel);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .form-thumb img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+  .form-thumb:hover { border-color: var(--accent); }
+  .form-thumb.active { border-color: var(--accent); background: var(--panel-2); box-shadow: 0 0 0 2px var(--accent); }
+  .mega-preview-btn {
+    flex-basis: 100%;
+    align-self: flex-start;
+    margin-top: 2px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: none;
+    background: var(--blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .mega-preview-btn:hover { filter: brightness(1.08); }
 
   .flavor-bubble {
     margin: 14px 0 4px;
@@ -936,6 +1004,7 @@
   <h1>Server Pokedex</h1>
   <p>Search every Pokemon available on this server (Cobblemon + All The Mons x Mega Showdown) and where to find them.</p>
 </header>
+<div class="shiny-banner">✨ Shiny mode is on &mdash; showing shiny sprites everywhere ✨</div>
 
 <div class="main-nav">
   <button type="button" class="main-nav-btn active" id="nav-dex" data-view="dex">📖 Pokedex</button>
@@ -943,6 +1012,7 @@
   <button type="button" class="main-nav-btn" id="nav-team" data-view="team">🛠️ Team Builder</button>
   <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
   <button type="button" id="sfx-toggle" class="icon-btn" aria-label="Toggle sound effects" title="Toggle sound effects">🔊</button>
+  <button type="button" id="shiny-toggle" class="icon-btn" aria-label="Toggle shiny sprites" title="Show shiny sprites">⭐</button>
 </div>
 
 <div id="dex-view">
@@ -975,6 +1045,9 @@
     <button type="button" class="guide-tab-btn" data-guide="training">💪 EV &amp; IV Training</button>
     <button type="button" class="guide-tab-btn" data-guide="battling">⚔️ Battling &amp; PvP</button>
     <button type="button" class="guide-tab-btn" data-guide="mega">💎 Mega Evolution</button>
+    <button type="button" class="guide-tab-btn" data-guide="dynamax">🔴 Dynamax &amp; Gigantamax</button>
+    <button type="button" class="guide-tab-btn" data-guide="tera">💠 Terastallization</button>
+    <button type="button" class="guide-tab-btn" data-guide="zmove">⚡ Z-Moves</button>
     <button type="button" class="guide-tab-btn" data-guide="tms">💿 TM Guide</button>
   </div>
   <div id="guide-content" class="guide-content"></div>
@@ -1033,9 +1106,17 @@ let EVOLVES_FROM = {};
 // invented "regional-bias" pre-evolution recolors (e.g. Hisuian Rowlet)
 // have no real PokeAPI variety, so those fall back to the base dex sprite.
 // Falls back to a pokeball placeholder if a sprite 404s.
-function spriteUrl(p) {
-  const id = p.spriteId || p.dex;
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+// `overrideId` lets a caller show a specific alt-form sprite (a Mega
+// Evolution or Gigantamax variety id from megaEvolutions[].spriteId /
+// gigantamax.spriteId) instead of the Pokemon's own. `shiny` defaults to
+// the site-wide shiny toggle so every sprite call site picks it up for
+// free; pass shiny:false explicitly for a spot that should never go shiny.
+let SHINY_MODE = false;
+try { SHINY_MODE = localStorage.getItem('pokedex-shiny') === 'on'; } catch (e) {}
+function spriteUrl(p, opts) {
+  const id = (opts && opts.overrideId) || p.spriteId || p.dex;
+  const shiny = opts && 'shiny' in opts ? opts.shiny : SHINY_MODE;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${shiny ? 'shiny/' : ''}${id}.png`;
 }
 // PokeAPI's "cries" repo is the sibling project to the "sprites" repo above
 // and uses the exact same pokemon-resource id numbering, so this reuses the
@@ -1338,15 +1419,26 @@ const MEGA_TAG_LABELS = { canon: 'Mega Showdown', bonus: "Champion's Stone", za:
 // pages for that.
 function megaHtml(p) {
   if (!p.megaEvolutions || !p.megaEvolutions.length) return '';
-  const rows = p.megaEvolutions.map(m => `
+  const rows = p.megaEvolutions.map((m, i) => {
+    const typeChange = m.types && m.types.join(',') !== p.types.join(',')
+      ? `<span class="mega-row-note">Type becomes ${m.types.join('/')}</span>` : '';
+    const abilityNote = m.abilities && m.abilities.length
+      ? `<span class="mega-row-note">New ability: ${m.abilities.join(' / ')}</span>` : '';
+    const preview = m.spriteId
+      ? `<button type="button" class="mega-preview-btn" data-mega-index="${i}" title="Preview this form's sprite">Preview sprite</button>` : '';
+    return `
     <div class="mega-row">
       <span class="mega-tag ${m.category}">${MEGA_TAG_LABELS[m.category] || m.category}</span>
       <span class="mega-item">${m.item}</span>
       <span class="mega-form">&rarr; ${m.form}</span>
       ${m.ingredients && m.ingredients.length ? `<span class="mega-ingredients">Crafted from: ${m.ingredients.join(', ')}</span>` : ''}
+      ${typeChange}
+      ${abilityNote}
       ${m.note ? `<span class="mega-row-note">${m.note}</span>` : ''}
+      ${preview}
     </div>
-  `).join('');
+  `;
+  }).join('');
   return `
     <div class="mega-section">
       <h4>Mega Evolution</h4>
@@ -1354,6 +1446,75 @@ function megaHtml(p) {
       <p class="mega-note">Held item &mdash; give it to this Pokemon, plus your own Key Stone accessory worn separately. Full how-to: Guides &rarr; Mega Evolution.</p>
     </div>
   `;
+}
+
+// Gigantamax data is only present for the ~32 species this server's Mega
+// Showdown mod actually supports (matched against Cobblemon's own bundled
+// Showdown canGigantamax flag -- see enrich_forms.js). Bonus/Z-A megas and
+// every other species simply have no gigantamax field, so this renders
+// nothing for them.
+function gigantamaxHtml(p) {
+  if (!p.gigantamax) return '';
+  const preview = p.gigantamax.spriteId
+    ? `<button type="button" class="mega-preview-btn" data-gmax="1" title="Preview the Gigantamax sprite">Preview sprite</button>` : '';
+  return `
+    <div class="mega-section">
+      <h4>Gigantamax</h4>
+      <div class="mega-row">
+        <span class="mega-tag za" style="background:#5b3a99;">Dynamax</span>
+        <span class="mega-item">Signature move: ${p.gigantamax.move}</span>
+        ${preview}
+      </div>
+      <p class="mega-note">Feed this Pokemon a Max Soup (or Sweet Max Soup) to permanently unlock its own Gigantamax form. Full how-to: Guides &rarr; Dynamax &amp; Gigantamax.</p>
+    </div>
+  `;
+}
+
+// A clickable strip of small sprite thumbnails (base form + any Mega/Gmax
+// forms this Pokemon has a real sprite id for) shown at the top of its
+// detail sheet, so switching the big sprite between them is one click.
+// Only forms with a real spriteId show up here -- the fan-made "bonus"/
+// "za" megas have no official sprite to show, so they're left out of the
+// strip entirely rather than showing something wrong.
+function formThumbsHtml(p) {
+  const megaThumbs = (p.megaEvolutions || [])
+    .map((m, i) => m.spriteId
+      ? `<button type="button" class="form-thumb" data-mega-index="${i}" title="${m.form}">
+          <img src="${spriteUrl(p, { overrideId: m.spriteId })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${m.form}">
+        </button>`
+      : '')
+    .join('');
+  const gmaxThumb = p.gigantamax && p.gigantamax.spriteId
+    ? `<button type="button" class="form-thumb" data-gmax="1" title="Gigantamax ${p.name}">
+        <img src="${spriteUrl(p, { overrideId: p.gigantamax.spriteId })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="Gigantamax ${p.name}">
+      </button>`
+    : '';
+  if (!megaThumbs && !gmaxThumb) return '';
+  return `
+    <div class="form-thumbs">
+      <button type="button" class="form-thumb active" data-form-base="1" title="${p.name} (base form)">
+        <img src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name}">
+      </button>
+      ${megaThumbs}
+      ${gmaxThumb}
+    </div>
+  `;
+}
+
+// Swaps the big sprite (and the type badges, if the form has different
+// types) without re-rendering the whole sheet. formData is a megaEvolutions
+// entry, {spriteId} for gigantamax, or null to go back to the base form.
+function selectForm(sheet, p, formData, label) {
+  const img = sheet.querySelector('#detail-sprite');
+  img.onerror = function () { this.onerror = null; this.src = SPRITE_FALLBACK; };
+  img.src = spriteUrl(p, { overrideId: formData ? formData.spriteId : null });
+  const labelEl = sheet.querySelector('#detail-form-label');
+  if (labelEl) labelEl.textContent = label || '';
+  const typesEl = sheet.querySelector('.sheet-screen .types');
+  if (typesEl) {
+    const types = (formData && formData.types) || p.types;
+    typesEl.innerHTML = types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('');
+  }
 }
 
 // Walks EVOLVES_FROM backward from any stage to find its family's earliest
@@ -1575,6 +1736,7 @@ function flavorHtml(p) {
 
 function openDetail(p) {
   if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
+  CURRENT_DETAIL_POKEMON = p;
   const sheet = document.getElementById('sheet');
   sheet.style.setProperty('--screen-color', typeColor(p));
   let spawnHtml;
@@ -1622,10 +1784,12 @@ function openDetail(p) {
   sheet.innerHTML = `
     <div class="sheet-screen">
       <button class="sheet-close" aria-label="Close">&times;</button>
-      <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+      <img id="detail-sprite" class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+      ${formThumbsHtml(p)}
       <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
       ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
       <h2>${p.name}</h2>
+      <span id="detail-form-label" class="form-label"></span>
       <button type="button" class="cry-btn" aria-label="Play ${p.name}'s cry" title="Play cry">&#9654; Cry</button>
       <div class="types">
         ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
@@ -1635,12 +1799,35 @@ function openDetail(p) {
       ${flavorHtml(p)}
       ${mechanicsHtml(p)}
       ${megaHtml(p)}
+      ${gigantamaxHtml(p)}
       ${evolutionHtml(p)}
       <div style="margin-top:14px;">${spawnHtml}</div>
       ${snackTipsHtml(p)}
     </div>
   `;
   sheet.querySelector('.sheet-close').addEventListener('click', closeDetail);
+  sheet.querySelectorAll('.form-thumb, .mega-preview-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      let formData = null;
+      let label = '';
+      if (btn.dataset.megaIndex !== undefined) {
+        formData = p.megaEvolutions[Number(btn.dataset.megaIndex)];
+        label = formData.form;
+      } else if (btn.dataset.gmax !== undefined) {
+        formData = { spriteId: p.gigantamax.spriteId };
+        label = `Gigantamax ${p.name}`;
+      } else {
+        label = '';
+      }
+      selectForm(sheet, p, formData, label);
+      sheet.querySelectorAll('.form-thumb').forEach(t => t.classList.remove('active'));
+      const matchingThumb = btn.classList.contains('form-thumb')
+        ? btn
+        : sheet.querySelector(btn.dataset.gmax !== undefined ? '.form-thumb[data-gmax]' : `.form-thumb[data-mega-index="${btn.dataset.megaIndex}"]`);
+      if (matchingThumb) matchingThumb.classList.add('active');
+      else sheet.querySelector('.form-thumb[data-form-base]')?.classList.remove('active');
+    });
+  });
   sheet.querySelectorAll('.evo-tree-name[data-goto]').forEach(el => {
     el.addEventListener('click', () => {
       const target = DEX_BY_ID[el.getAttribute('data-goto')];
@@ -1662,6 +1849,9 @@ function openDetail(p) {
 // Shared across calls so opening a new Pokemon (or closing the sheet) stops
 // whatever cry was still playing instead of letting two overlap.
 let currentCryAudio = null;
+// Tracks whichever Pokemon's sheet is currently open, so the shiny toggle
+// can redraw it in place (see initShinyToggle below).
+let CURRENT_DETAIL_POKEMON = null;
 
 function playCry(p, btn) {
   if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
@@ -1679,6 +1869,7 @@ function closeDetail() {
   document.body.classList.remove('scroll-locked');
   if (window.speechSynthesis) window.speechSynthesis.cancel();
   if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
+  CURRENT_DETAIL_POKEMON = null;
 }
 
 // ============================================================
@@ -1916,8 +2107,15 @@ const GUIDES = {
       </div>
 
       <div class="guide-card">
-        <h3>Don't forget</h3>
-        <p>Mega Evolution can be a huge mid-battle swing on the Pokemon that support it &mdash; see the Mega Evolution tab for how to set one up. And always weigh the type matchup: the type chart still decides more fights than any stat spread does.</p>
+        <h3>Don't forget: battle gimmicks</h3>
+        <p>This server's Mega Showdown add-on brings in all four battle gimmicks, and any one of them can be a huge mid-battle swing &mdash; each has its own step-by-step guide tab:</p>
+        <ul>
+          <li>💎 <b>Mega Evolution</b> &mdash; held Mega Stone + a worn Key Stone bracelet.</li>
+          <li>🔴 <b>Dynamax &amp; Gigantamax</b> &mdash; a worn Dynamax Band, plus optionally Max Soup to permanently unlock a species' Gigantamax form.</li>
+          <li>💠 <b>Terastallization</b> &mdash; a worn Tera Orb, with Tera Shards to change a Pokemon's Tera Type.</li>
+          <li>⚡ <b>Z-Moves</b> &mdash; a worn Z-Ring plus a held, type-matched Z-Crystal.</li>
+        </ul>
+        <p>And always weigh the type matchup: the type chart still decides more fights than any stat spread or gimmick does.</p>
       </div>
     `,
   },
@@ -1925,6 +2123,128 @@ const GUIDES = {
   mega: {
     title: 'Mega Evolution',
     html: null, // rendered dynamically by megaGeneralHtml() since it needs MEGA_GENERAL data
+  },
+
+  dynamax: {
+    title: 'Dynamax & Gigantamax',
+    html: `
+      <h2>Dynamax &amp; Gigantamax</h2>
+      <p class="guide-intro">This server's Mega Showdown add-on brings in Gen 8's other big gimmick too &mdash; here's exactly how to set it up and the difference between the two versions of it.</p>
+
+      <div class="guide-card">
+        <h3>Dynamax vs. Gigantamax</h3>
+        <ul>
+          <li><b>Dynamax</b> &mdash; any Pokemon can do this once you've got the gear. It just grows huge and gets a temporary HP boost for the fight.</li>
+          <li><b>Gigantamax</b> &mdash; a special, even bigger form only certain species can reach, with its own unique look and its own signature G-Max move. It has to be unlocked per-species first (see below) before that Pokemon can ever use it.</li>
+        </ul>
+        <p class="guide-note">This server has confirmed real Gigantamax forms for 32 species &mdash; check a Pokemon's own dex page here; if it has a Gigantamax thumbnail next to its sprite, it's one of them.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Step 1: Get a Dynamax Band</h3>
+        <p>Find a <b>Wishing Weald</b> structure out in the world and loot a <b>Wishing Star</b> from it. Then craft:</p>
+        <table class="guide-table">
+          <tr><th>Slot</th><th>Item</th></tr>
+          <tr><td>Top row (all 3)</td><td>Pink Apricorn</td></tr>
+          <tr><td>Middle row (left &amp; right)</td><td>Iron Ingot</td></tr>
+          <tr><td>Middle row (center)</td><td>Wishing Star</td></tr>
+          <tr><td>Bottom row (all 3)</td><td>Blue Apricorn</td></tr>
+        </table>
+        <p>Wear the finished <b>Dynamax Band</b> in your accessory slot (right-click to equip it) and any Pokemon on your team can now Dynamax in battle.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Step 2 (optional): Unlock a permanent Gigantamax form</h3>
+        <p><b>Max Mushrooms</b> grow naturally out in the world &mdash; keep an eye out for the mushroom block and harvest it once it's fully grown. Then cook either:</p>
+        <ul>
+          <li><b>Max Soup</b> &mdash; 3 Max Mushroom + a Bowl, at a Cooking Pot.</li>
+          <li><b>Sweet Max Soup</b> &mdash; the same, plus a Max Honey (craft: 1 Honey Bottle + 1 Max Mushroom) for a sweeter version.</li>
+        </ul>
+        <p>Feed the finished soup to a Pokemon of a Gigantamax-capable species and it <b>permanently</b> unlocks that species' own Gigantamax form &mdash; from then on it can Gigantamax any time it Dynamaxes, using its unique G-Max signature move. This only works on the ~32 species that actually have a Gigantamax form; feeding it to anything else does nothing.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Dynamax Candy</h3>
+        <p>Craft from 4 Exp. Candy S in a plus shape around 1 Max Mushroom. Feeding it to a Pokemon raises its <b>Dynamax Level</b> &mdash; worth stacking up on your main battlers.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>In battle</h3>
+        <p>With the Dynamax Band worn, the Dynamax option shows up in battle same as the mainline games &mdash; once per battle, lasting a few turns, with boosted HP and (for a Gigantamax-unlocked Pokemon) access to its G-Max move.</p>
+      </div>
+    `,
+  },
+
+  tera: {
+    title: 'Terastallization',
+    html: `
+      <h2>Terastallization</h2>
+      <p class="guide-intro">The Gen 9 gimmick, added by this server's Mega Showdown add-on &mdash; how to get set up, and how re-typing a Pokemon's Tera Type actually works here.</p>
+
+      <div class="guide-card">
+        <h3>Step 1: Craft a Tera Orb</h3>
+        <table class="guide-table">
+          <tr><th>Slot</th><th>Item</th></tr>
+          <tr><td>Top row (left &amp; right)</td><td>Amethyst Shard</td></tr>
+          <tr><td>Top row (center)</td><td>Ender Pearl</td></tr>
+          <tr><td>Middle row (left &amp; right)</td><td>Glowstone Dust</td></tr>
+          <tr><td>Middle row (center)</td><td>Diamond</td></tr>
+          <tr><td>Bottom row (left &amp; right)</td><td>Amethyst Shard</td></tr>
+          <tr><td>Bottom row (center)</td><td>Blaze Powder</td></tr>
+        </table>
+        <p>Wear the finished <b>Tera Orb</b> in your accessory slot and any Pokemon on your team can Terastallize in battle, using whatever Tera Type it currently has.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Changing a Pokemon's Tera Type</h3>
+        <p>Every Pokemon has a Tera Type from the moment you get it (matching one of its normal types by default). To permanently change it to something else, you need <b>Tera Shards</b> of the type you want &mdash; and they're <b>consumed</b>, not held: feed a Pokemon <b>50 shards</b> of one type to permanently set its Tera Type to that type. A <b>Tera Pouch</b> (several color options, purely cosmetic) is a handy dedicated storage item if you're collecting a lot of shards.</p>
+        <p class="guide-note"><b>Ogerpon and Terapagos are hardcoded exceptions</b> &mdash; their Tera Type is fixed to their signature type and can't be changed with shards, exactly like the mainline games.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>In battle</h3>
+        <p>With the Tera Orb worn, the Terastallize option shows up once per battle. Terastallizing swaps the Pokemon's type to just its single Tera Type (dropping its normal secondary type for the rest of the fight) and gives a Same-Type-Attack-Bonus boost to matching moves &mdash; the same mainline-game mechanic, just gated behind the Tera Orb and Tera Shards here instead of being free.</p>
+      </div>
+    `,
+  },
+
+  zmove: {
+    title: 'Z-Moves',
+    html: `
+      <h2>Z-Moves</h2>
+      <p class="guide-intro">The Gen 7 gimmick, added by this server's Mega Showdown add-on &mdash; the full Z-Ring/Z-Crystal crafting chain.</p>
+
+      <div class="guide-card">
+        <h3>Step 1: Find the raw materials</h3>
+        <p>Explore an <b>Observatory</b> or <b>Archaeological Site</b> structure and loot a <b>Sparkling Stone</b> (Light or Dark &mdash; either works) and a <b>Blank-Z</b> from the chests/barrels there. Neither is craftable, so structure loot is the only way to get them.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Step 2: Craft a Z-Ring</h3>
+        <table class="guide-table">
+          <tr><th>Slot</th><th>Item</th></tr>
+          <tr><td>Top row (all 3)</td><td>Iron Ingot &mdash; Sparkling Stone (center) &mdash; Iron Ingot</td></tr>
+          <tr><td>Middle row (left &amp; right)</td><td>White Apricorn</td></tr>
+          <tr><td>Bottom row (all 3)</td><td>Iron Ingot</td></tr>
+        </table>
+        <p>Wear the finished <b>Z-Ring</b> in your accessory slot. There are several purely cosmetic reskins (Z-Power Ring, and a handful of character-themed rings) that work identically.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Step 3: Craft a Z-Crystal for the type you want</h3>
+        <p>Each type's Z-Crystal is <b>1 Blank-Z + 4 of that type's Type Gem</b>, arranged in a plus shape (one gem above, one left, one right, one below the Blank-Z). So a Firium Z needs 4 Fire Gems + 1 Blank-Z, an Aloraichium Z needs 4 Electric Gems + 1 Blank-Z, and so on for every type &mdash; plus a handful of species-specific ones (like Pikanium Z, Decidium Z, Mewnium Z) for their signature Z-Moves.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Using it in battle</h3>
+        <p>Hold the finished Z-Crystal on the Pokemon (a normal held item) and wear the Z-Ring yourself. If that Pokemon knows a move matching the Z-Crystal's type (or the exact signature move for a species-specific Z-Crystal), the Z-Move option appears in battle &mdash; once per battle, same as the mainline games.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Heads up: the Omni Ring</h3>
+        <p>There's also an <b>Omni Ring</b> (Keystone + Netherite Ingot + a Sparkling Stone + Tera Orb + Wishing Star, crafted together), which looks like it's meant to combine Mega Evolution, Dynamax, and Terastallization into a single worn accessory. Its exact scope wasn't fully confirmed on our end (it doesn't appear to include Z-Move components), so treat it as a nice-to-have shortcut rather than assuming it replaces every ring above.</p>
+      </div>
+    `,
   },
 
   tms: {
@@ -2580,6 +2900,30 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 });
 
 // ---- Sound effects on/off ----
+// Global shiny toggle: swaps the sprite folder (pokemon/ <-> pokemon/shiny/)
+// for every sprite this page draws. Re-renders whatever's currently on
+// screen (dex grid, an open detail sheet, the team builder) so the switch
+// is felt everywhere immediately, not just on the next click.
+(function initShinyToggle() {
+  const btn = document.getElementById('shiny-toggle');
+  const apply = () => {
+    btn.classList.toggle('active', SHINY_MODE);
+    btn.title = SHINY_MODE ? 'Showing shiny sprites (click to go back to normal)' : 'Show shiny sprites';
+    document.body.classList.toggle('shiny-mode', SHINY_MODE);
+  };
+  apply();
+  btn.addEventListener('click', () => {
+    SHINY_MODE = !SHINY_MODE;
+    try { localStorage.setItem('pokedex-shiny', SHINY_MODE ? 'on' : 'off'); } catch (e) {}
+    apply();
+    if (typeof render === 'function' && DEX.length) render();
+    if (document.getElementById('overlay').classList.contains('open') && CURRENT_DETAIL_POKEMON) {
+      openDetail(CURRENT_DETAIL_POKEMON);
+    }
+    if (typeof renderTeamBuilder === 'function' && TB_LOADED) renderTeamBuilder();
+  });
+})();
+
 (function initSfxToggle() {
   const btn = document.getElementById('sfx-toggle');
   btn.textContent = sfxEnabled() ? '🔊' : '🔇';
