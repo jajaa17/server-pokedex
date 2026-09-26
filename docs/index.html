@@ -1656,6 +1656,7 @@ function allBuildTiers() {
     if (e.base) collect(e.base.sets);
     if (e.mega) e.mega.forEach(m => collect(m.sets));
     if (e.gigantamax) collect(e.gigantamax.sets);
+    if (e.altForms) e.altForms.forEach(a => collect(a.sets));
   }
   return set;
 }
@@ -1665,6 +1666,7 @@ function buildSetCount(entry) {
   let n = entry.base ? entry.base.sets.length : 0;
   if (entry.mega) for (const m of entry.mega) n += m.sets.length;
   if (entry.gigantamax) n += entry.gigantamax.sets.length;
+  if (entry.altForms) for (const a of entry.altForms) n += a.sets.length;
   return n;
 }
 
@@ -1688,7 +1690,8 @@ function renderBuilds() {
       const has = sets => sets.some(s => s.tier === tierFilter);
       return (e.base && has(e.base.sets)) ||
         (e.mega && e.mega.some(m => has(m.sets))) ||
-        (e.gigantamax && has(e.gigantamax.sets));
+        (e.gigantamax && has(e.gigantamax.sets)) ||
+        (e.altForms && e.altForms.some(a => has(a.sets)));
     });
   }
   if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || String(p.dex).includes(q));
@@ -1772,16 +1775,21 @@ function groupSetsByTier(sets) {
   return order.map(tier => ({ tier, sets: byTier.get(tier) }));
 }
 
-// Flattens one dex entry's base/mega/gigantamax data into a plain list of
-// "forms" to tab between -- each carries its own generation, since a
-// Pokemon's Mega or Gigantamax build can genuinely come from an older or
-// newer gen than its base form's build.
+// Flattens one dex entry's base/mega/gigantamax/altForms data into a plain
+// list of "forms" to tab between -- each carries its own generation, since
+// a Pokemon's Mega, Gigantamax, or alternate forme (Therian, Origin,
+// Crowned, an appliance Rotom, etc.) can genuinely come from an older or
+// newer gen than its base form's build. altForms covers Pokemon whose
+// battle-different formes share one flat dex entry here (Calyrex-Shadow,
+// Kyurem-Black/White, Landorus-Therian, and the like) -- see
+// smogon_sets.json's own build script for exactly which ones and why.
 function buildFormsList(p, entry) {
   const forms = [];
   if (!entry) return forms;
   if (entry.base) forms.push({ label: `${p.name} (Base Form)`, gen: entry.base.gen, sets: entry.base.sets });
   if (entry.mega) for (const m of entry.mega) forms.push({ label: m.form, gen: m.gen, sets: m.sets });
   if (entry.gigantamax) forms.push({ label: `Gigantamax ${p.name}`, gen: entry.gigantamax.gen, sets: entry.gigantamax.sets });
+  if (entry.altForms) for (const a of entry.altForms) forms.push({ label: a.form, gen: a.gen, sets: a.sets });
   return forms;
 }
 
