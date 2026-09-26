@@ -756,6 +756,41 @@
   .t-dragon   { background: #6F35FC; } .t-dark   { background: #705746; }
   .t-steel    { background: #B7B7CE; } .t-fairy  { background: #D685AD; }
 
+  /* Type effectiveness cheat sheet (Battling guide) -- one small card per
+     attacking type, laid out in a responsive grid so it never needs to
+     squeeze an 18-column table onto a phone screen. */
+  .type-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .type-chart-entry {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .type-chart-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    font-size: 12px;
+  }
+  .type-chart-line b { color: var(--muted); font-size: 11px; margin-right: 1px; }
+  .type-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: capitalize;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+  }
+
   /* Detail overlay -- styled like an open Pokedex screen */
   #overlay {
     display: none;
@@ -2182,6 +2217,94 @@ const GUIDES = {
           <li><b>Status</b> &mdash; deals no direct damage; it changes stats, inflicts conditions, sets up field/team effects, etc. instead.</li>
         </ul>
         <p class="guide-note">This is exactly why a Pokemon's EV spread should match the category of the moves it's actually going to use &mdash; investing in Sp. Attack does nothing for a moveset that's entirely physical, and vice versa.</p>
+      </div>
+
+      <div class="guide-card">
+        <h3>Type effectiveness cheat sheet</h3>
+        <p>The single biggest thing that decides a battle before stats even matter. Every move's type is checked against the target's type(s) for a damage multiplier: <b>2x</b> (super effective) if it's strong against either of the target's types, <b>0.5x</b> (not very effective) if it's resisted, and <b>0x</b> (no effect at all) against a full immunity. A dual-type Pokemon stacks both of its types' multipliers together &mdash; a Water move against a Ground/Rock Pokemon is 2x &times; 2x = <b>4x</b> damage, and Electric against a Ground/Flying Pokemon is 0x &times; 2x = still <b>0x</b> (immunity always wins).</p>
+        <p>Find the attacking move's type below to see what it's strong, weak, and useless against:</p>
+        <div class="type-chart-grid">
+          <div class="type-chart-entry"><span class="type-chip t-normal">Normal</span>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-rock">Rock</span><span class="type-chip t-steel">Steel</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-ghost">Ghost</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-fire">Fire</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-grass">Grass</span><span class="type-chip t-ice">Ice</span><span class="type-chip t-bug">Bug</span><span class="type-chip t-steel">Steel</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-water">Water</span><span class="type-chip t-rock">Rock</span><span class="type-chip t-dragon">Dragon</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-water">Water</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-ground">Ground</span><span class="type-chip t-rock">Rock</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-water">Water</span><span class="type-chip t-grass">Grass</span><span class="type-chip t-dragon">Dragon</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-electric">Electric</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-water">Water</span><span class="type-chip t-flying">Flying</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-electric">Electric</span><span class="type-chip t-grass">Grass</span><span class="type-chip t-dragon">Dragon</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-ground">Ground</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-grass">Grass</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-water">Water</span><span class="type-chip t-ground">Ground</span><span class="type-chip t-rock">Rock</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-grass">Grass</span><span class="type-chip t-poison">Poison</span><span class="type-chip t-flying">Flying</span><span class="type-chip t-bug">Bug</span><span class="type-chip t-dragon">Dragon</span><span class="type-chip t-steel">Steel</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-ice">Ice</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-grass">Grass</span><span class="type-chip t-ground">Ground</span><span class="type-chip t-flying">Flying</span><span class="type-chip t-dragon">Dragon</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-water">Water</span><span class="type-chip t-ice">Ice</span><span class="type-chip t-steel">Steel</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-fighting">Fighting</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-normal">Normal</span><span class="type-chip t-ice">Ice</span><span class="type-chip t-rock">Rock</span><span class="type-chip t-dark">Dark</span><span class="type-chip t-steel">Steel</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-poison">Poison</span><span class="type-chip t-flying">Flying</span><span class="type-chip t-psychic">Psychic</span><span class="type-chip t-bug">Bug</span><span class="type-chip t-fairy">Fairy</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-ghost">Ghost</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-poison">Poison</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-grass">Grass</span><span class="type-chip t-fairy">Fairy</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-poison">Poison</span><span class="type-chip t-ground">Ground</span><span class="type-chip t-rock">Rock</span><span class="type-chip t-ghost">Ghost</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-steel">Steel</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-ground">Ground</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-electric">Electric</span><span class="type-chip t-poison">Poison</span><span class="type-chip t-rock">Rock</span><span class="type-chip t-steel">Steel</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-grass">Grass</span><span class="type-chip t-bug">Bug</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-flying">Flying</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-flying">Flying</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-grass">Grass</span><span class="type-chip t-fighting">Fighting</span><span class="type-chip t-bug">Bug</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-electric">Electric</span><span class="type-chip t-rock">Rock</span><span class="type-chip t-steel">Steel</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-psychic">Psychic</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-fighting">Fighting</span><span class="type-chip t-poison">Poison</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-psychic">Psychic</span><span class="type-chip t-steel">Steel</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-dark">Dark</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-bug">Bug</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-grass">Grass</span><span class="type-chip t-psychic">Psychic</span><span class="type-chip t-dark">Dark</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-fighting">Fighting</span><span class="type-chip t-poison">Poison</span><span class="type-chip t-flying">Flying</span><span class="type-chip t-ghost">Ghost</span><span class="type-chip t-steel">Steel</span><span class="type-chip t-fairy">Fairy</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-rock">Rock</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-ice">Ice</span><span class="type-chip t-flying">Flying</span><span class="type-chip t-bug">Bug</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fighting">Fighting</span><span class="type-chip t-ground">Ground</span><span class="type-chip t-steel">Steel</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-ghost">Ghost</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-psychic">Psychic</span><span class="type-chip t-ghost">Ghost</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-dark">Dark</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-normal">Normal</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-dragon">Dragon</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-dragon">Dragon</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-steel">Steel</span></div>
+            <div class="type-chart-line"><b>0x:</b> <span class="type-chip t-fairy">Fairy</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-dark">Dark</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-psychic">Psychic</span><span class="type-chip t-ghost">Ghost</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fighting">Fighting</span><span class="type-chip t-dark">Dark</span><span class="type-chip t-fairy">Fairy</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-steel">Steel</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-ice">Ice</span><span class="type-chip t-rock">Rock</span><span class="type-chip t-fairy">Fairy</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-water">Water</span><span class="type-chip t-electric">Electric</span><span class="type-chip t-steel">Steel</span></div>
+          </div>
+          <div class="type-chart-entry"><span class="type-chip t-fairy">Fairy</span>
+            <div class="type-chart-line"><b>2x:</b> <span class="type-chip t-fighting">Fighting</span><span class="type-chip t-dragon">Dragon</span><span class="type-chip t-dark">Dark</span></div>
+            <div class="type-chart-line"><b>0.5x:</b> <span class="type-chip t-fire">Fire</span><span class="type-chip t-poison">Poison</span><span class="type-chip t-steel">Steel</span></div>
+          </div>
+        </div>
+        <p class="guide-note">Remember this chart is keyed by the <em>move's</em> type, not the attacker's species &mdash; a Water-type Pokemon using a Fire move still deals Fire-type damage. The Team Builder's Defensive Weaknesses card can work out your whole team's shared weak points for you automatically if you don't want to do the multiplying by hand.</p>
       </div>
 
       <div class="guide-card">
