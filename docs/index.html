@@ -504,6 +504,27 @@
     border: 3px solid #222;
     animation: spinBall 0.9s linear infinite;
   }
+  /* A real (static) Poke Ball drawn in pure CSS, in fixed brand colors so it
+     reads the same in light/dark mode -- used in place of generic emoji on
+     buttons/icons throughout the site (nav, mascot, guide tabs). */
+  .pokeball-icon {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background:
+      linear-gradient(#fff, #fff) center/6px 6px no-repeat,
+      linear-gradient(to bottom, #ee1515 0%, #ee1515 46%, #1c1c1c 46%, #1c1c1c 54%, #fff 54%, #fff 100%);
+    border: 1.5px solid #1c1c1c;
+    vertical-align: -3px;
+    flex: 0 0 auto;
+  }
+  .pokeball-icon.lg {
+    width: 34px; height: 34px;
+    border-width: 3px;
+    background:
+      linear-gradient(#fff, #fff) center/13px 13px no-repeat,
+      linear-gradient(to bottom, #ee1515 0%, #ee1515 46%, #1c1c1c 46%, #1c1c1c 54%, #fff 54%, #fff 100%);
+  }
 
   #grid {
     display: grid;
@@ -1035,19 +1056,19 @@
 <body>
 
 <header>
-  <span class="mascot" aria-hidden="true">📡</span>
+  <span class="mascot" aria-hidden="true"><span class="pokeball-icon lg"></span></span>
   <h1>Server Pokedex</h1>
   <p>Search every Pokemon available on this server (Cobblemon + All The Mons x Mega Showdown) and where to find them.</p>
 </header>
 <div class="shiny-banner">✨ Shiny mode is on &mdash; showing shiny sprites everywhere ✨</div>
 
 <div class="main-nav">
-  <button type="button" class="main-nav-btn active" id="nav-dex" data-view="dex">📖 Pokedex</button>
-  <button type="button" class="main-nav-btn" id="nav-guides" data-view="guides">📚 Guides</button>
-  <button type="button" class="main-nav-btn" id="nav-team" data-view="team">🛠️ Team Builder</button>
+  <button type="button" class="main-nav-btn active" id="nav-dex" data-view="dex"><span class="pokeball-icon" aria-hidden="true"></span> Pokedex</button>
+  <button type="button" class="main-nav-btn" id="nav-guides" data-view="guides">🗺️ Guides</button>
+  <button type="button" class="main-nav-btn" id="nav-team" data-view="team">🎒 Team Builder</button>
   <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
   <button type="button" id="sfx-toggle" class="icon-btn" aria-label="Toggle sound effects" title="Toggle sound effects">🔊</button>
-  <button type="button" id="shiny-toggle" class="icon-btn" aria-label="Toggle shiny sprites" title="Show shiny sprites">⭐</button>
+  <button type="button" id="shiny-toggle" class="icon-btn" aria-label="Toggle shiny sprites" title="Show shiny sprites">✨</button>
 </div>
 
 <div id="dex-view">
@@ -1076,7 +1097,7 @@
 
 <div id="guides-view" style="display:none;">
   <div class="guide-tabs">
-    <button type="button" class="guide-tab-btn active" data-guide="catching">🎯 Catching Guide</button>
+    <button type="button" class="guide-tab-btn active" data-guide="catching"><span class="pokeball-icon" aria-hidden="true"></span> Catching Guide</button>
     <button type="button" class="guide-tab-btn" data-guide="training">💪 EV &amp; IV Training</button>
     <button type="button" class="guide-tab-btn" data-guide="battling">⚔️ Battling &amp; PvP</button>
     <button type="button" class="guide-tab-btn" data-guide="mega">💎 Mega Evolution</button>
