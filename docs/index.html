@@ -486,7 +486,7 @@
     font-weight: 700;
   }
 
-  #loading {
+  #loading, #builds-loading {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -526,7 +526,7 @@
       linear-gradient(to bottom, #ee1515 0%, #ee1515 46%, #1c1c1c 46%, #1c1c1c 54%, #fff 54%, #fff 100%);
   }
 
-  #grid {
+  #grid, #builds-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 14px;
@@ -643,6 +643,71 @@
     margin-bottom: 4px;
   }
   .snack-row .snack-name { color: var(--text); font-weight: 700; }
+
+  /* ---- Smogon competitive builds page ---- */
+  .build-count-note { margin-top: 8px; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .builds-credit {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 4px auto 40px;
+    max-width: 640px;
+    padding: 0 20px;
+  }
+  .builds-credit a { color: var(--accent); font-weight: 700; }
+  .build-form-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin: 18px 0 8px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+  .build-form-heading:first-child { margin-top: 0; }
+  .build-gen-tag {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 700;
+    font-size: 11.5px;
+    color: var(--text);
+    background: var(--panel-2);
+    padding: 2px 9px;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+  .build-set-card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .build-set-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .build-set-name { font-weight: 700; font-size: 13.5px; }
+  .build-set-line { font-size: 12.5px; line-height: 1.6; margin-bottom: 2px; }
+  .build-set-line b { color: var(--muted); font-weight: 700; margin-right: 3px; }
+  .build-moves { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .build-move-chip {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .no-build-text { color: var(--muted); font-size: 13.5px; text-align: center; padding: 20px 10px; }
 
   .mechanics-section {
     margin-top: 14px;
@@ -792,7 +857,7 @@
   }
 
   /* Detail overlay -- styled like an open Pokedex screen */
-  #overlay {
+  #overlay, #builds-overlay {
     display: none;
     position: fixed; inset: 0;
     background: var(--overlay-bg);
@@ -802,7 +867,7 @@
     padding: 40px 16px;
     overflow-y: auto;
   }
-  #overlay.open { display: flex; }
+  #overlay.open, #builds-overlay.open { display: flex; }
   .sheet {
     background: var(--panel);
     border-radius: 22px;
@@ -1101,6 +1166,7 @@
   <button type="button" class="main-nav-btn active" id="nav-dex" data-view="dex"><span class="pokeball-icon" aria-hidden="true"></span> Pokedex</button>
   <button type="button" class="main-nav-btn" id="nav-guides" data-view="guides">🗺️ Guides</button>
   <button type="button" class="main-nav-btn" id="nav-team" data-view="team">🎒 Team Builder</button>
+  <button type="button" class="main-nav-btn" id="nav-builds" data-view="builds">🏆 Builds</button>
   <button type="button" id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
   <button type="button" id="sfx-toggle" class="icon-btn" aria-label="Toggle sound effects" title="Toggle sound effects">🔊</button>
   <button type="button" id="shiny-toggle" class="icon-btn" aria-label="Toggle shiny sprites" title="Show shiny sprites">✨</button>
@@ -1174,8 +1240,30 @@
   </div>
 </div>
 
+<div id="builds-view" style="display:none;">
+  <div class="controls">
+    <input type="search" id="builds-search" placeholder="Search Pokemon for a build..." autocomplete="off">
+    <select id="builds-tier-filter">
+      <option value="">All tiers</option>
+    </select>
+    <select id="builds-sort">
+      <option value="dex">Sort: Dex number</option>
+      <option value="name">Sort: Name (A-Z)</option>
+      <option value="sets">Sort: Most sets first</option>
+    </select>
+  </div>
+  <div class="count" id="builds-count"></div>
+  <div id="builds-loading"><div class="pokeball-spin"></div><p>Loading competitive builds&hellip;</p></div>
+  <div id="builds-grid" style="display:none;"></div>
+  <p class="builds-credit">Competitive set data is pulled from <a href="https://www.smogon.com/" target="_blank" rel="noopener">Smogon</a> via the open <a href="https://github.com/pkmn/smogon" target="_blank" rel="noopener">pkmn/smogon</a> project &mdash; the same data Pokemon Showdown's own teambuilder uses, refreshed automatically. Not every Pokemon on this server has a published build: early evolution stages and most homebrew/fusion Pokemon usually don't get a competitive analysis from Smogon.</p>
+</div>
+
 <div id="overlay">
   <div class="sheet" id="sheet"></div>
+</div>
+
+<div id="builds-overlay">
+  <div class="sheet" id="builds-sheet"></div>
 </div>
 
 <footer>Data pulled from the server's Cobblemon and All The Mons x Mega Showdown files. Spawn odds and biomes can change when the mods update.<br>Also into Arma 3? Join the Philippine Joint Strike Force: <a href="https://discord.gg/armaph" target="_blank" rel="noopener">discord.gg/armaph</a></footer>
@@ -1353,17 +1441,25 @@ let SNACKS = null;
 
 let MEGA_GENERAL = null;
 
+// Real Smogon competitive sets, matched per dex entry -- see
+// smogon_sets.json's own build script for how this is put together.
+// Optional/best-effort: a missing or failed fetch just means the Builds
+// tab shows "no data" instead of breaking anything else on the site.
+let SMOGON = null;
+
 async function load() {
-  const [dexRes, biomeRes, snackRes, megaGeneralRes] = await Promise.all([
+  const [dexRes, biomeRes, snackRes, megaGeneralRes, smogonRes] = await Promise.all([
     fetch('pokedex.json'),
     fetch('biome_names.json'),
     fetch('poke_snacks.json'),
     fetch('mega_general.json').catch(() => null),
+    fetch('smogon_sets.json').catch(() => null),
   ]);
   DEX = await dexRes.json();
   BIOME_NAMES = await biomeRes.json();
   SNACKS = await snackRes.json();
   if (megaGeneralRes && megaGeneralRes.ok) MEGA_GENERAL = await megaGeneralRes.json();
+  if (smogonRes && smogonRes.ok) SMOGON = await smogonRes.json();
 
   DEX_BY_ID = Object.fromEntries(DEX.map(p => [p.id, p]));
   EVOLVES_FROM = {};
@@ -1393,9 +1489,23 @@ async function load() {
     biomeSelect.appendChild(opt);
   }
 
+  if (SMOGON) {
+    const tierSelect = document.getElementById('builds-tier-filter');
+    const tiers = [...allBuildTiers()].sort((a, b) => tierLabel(a).localeCompare(tierLabel(b)));
+    for (const t of tiers) {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = tierLabel(t);
+      tierSelect.appendChild(opt);
+    }
+  }
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('grid').style.display = '';
+  document.getElementById('builds-loading').style.display = 'none';
+  document.getElementById('builds-grid').style.display = '';
   render();
+  renderBuilds();
 }
 
 function render() {
@@ -1446,6 +1556,229 @@ function render() {
     card.addEventListener('keypress', e => { if (e.key === 'Enter') openDetail(p); });
     grid.appendChild(card);
   }
+}
+
+// ---- Smogon competitive builds page ----
+// Human-readable labels for Smogon's own tier slugs (data/sets/gen*.json
+// keys, pulled from the pkmn/smogon project -- see smogon_sets.json's
+// build script). Anything not listed here (there are 60+ across all 9
+// gens, mostly one-off metagames) falls back to a generic prettifier
+// below rather than needing every single slug spelled out by hand.
+const TIER_LABELS = {
+  ou: 'OU', uu: 'UU', ru: 'RU', nu: 'NU', pu: 'PU', zu: 'ZU', lc: 'LC',
+  ubers: 'Ubers', ubersuu: 'UUbers', nfe: 'NFE', cap: 'CAP', monotype: 'Monotype',
+  anythinggoes: 'Anything Goes', balancedhackmons: 'Balanced Hackmons',
+  purehackmons: 'Pure Hackmons', almostanyability: 'Almost Any Ability',
+  stabmons: 'STABmons', camomons: 'Camomons', godlygift: 'Godly Gift',
+  mixandmega: 'Mix and Mega', partnersincrime: 'Partners in Crime',
+  '2v2doubles': '2v2 Doubles', middlecup: 'Middle Cup', petitcup: 'Petit Cup',
+  pikacup: 'Pika Cup', inheritance: 'Inheritance', doublesou: 'Doubles OU',
+  battlespotsingles: 'Battle Spot Singles', battlespotdoubles: 'Battle Spot Doubles',
+  battlespottriples: 'Battle Spot Triples', battlestadiumsingles: 'Battle Stadium Singles',
+  battlestadiumdoubles: 'Battle Stadium Doubles', bdspou: 'BDSP OU',
+  dreamworldou: 'Dream World OU', letsgoou: "Let's Go OU", stadiumou: 'Stadium OU',
+  tradebacksou: 'Tradebacks OU', lclevel100: 'LC (Level 100)', '1v1': '1v1',
+  nationaldex: 'National Dex', nationaldexmonotype: 'National Dex Monotype',
+  nationaldexdoubles: 'National Dex Doubles', nationaldexru: 'National Dex RU',
+  nationaldexubers: 'National Dex Ubers', nationaldexuu: 'National Dex UU',
+  dlc1nationaldexag: 'National Dex AG (DLC1)', nc1997: "NC '97", nc1999: "NC '99",
+};
+function tierLabel(slug) {
+  if (TIER_LABELS[slug]) return TIER_LABELS[slug];
+  const vgc = /^vgc(\d{4})$/.exec(slug);
+  if (vgc) return `VGC ${vgc[1]}`;
+  return slug.replace(/^./, c => c.toUpperCase());
+}
+
+// Smogon's own JSON leaves a field as a plain string when there's one
+// good option, or an array of alternatives when a set could reasonably
+// run any of a few -- both are shown the same way, joined with " / ".
+function altStr(v) {
+  if (v === undefined || v === null) return null;
+  return Array.isArray(v) ? v.join(' / ') : v;
+}
+// A move slot is either one fixed move, or a nested array meaning
+// "pick whichever of these fits your team" (Smogon's own "either/or"
+// slot convention) -- shown joined with " or " instead of " / " so it
+// doesn't read like a same-set combo.
+function moveSlotStr(m) {
+  return Array.isArray(m) ? m.join(' or ') : m;
+}
+const EV_ORDER = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
+const EV_LABELS = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' };
+function evSpreadStr(spread) {
+  if (!spread) return null;
+  const parts = EV_ORDER.filter(k => spread[k]).map(k => `${spread[k]} ${EV_LABELS[k]}`);
+  return parts.length ? parts.join(' / ') : null;
+}
+
+function allBuildTiers() {
+  const set = new Set();
+  if (!SMOGON) return set;
+  const collect = sets => sets.forEach(s => set.add(s.tier));
+  for (const id in SMOGON) {
+    const e = SMOGON[id];
+    if (e.base) collect(e.base.sets);
+    if (e.mega) e.mega.forEach(m => collect(m.sets));
+    if (e.gigantamax) collect(e.gigantamax.sets);
+  }
+  return set;
+}
+
+function buildSetCount(entry) {
+  if (!entry) return 0;
+  let n = entry.base ? entry.base.sets.length : 0;
+  if (entry.mega) for (const m of entry.mega) n += m.sets.length;
+  if (entry.gigantamax) n += entry.gigantamax.sets.length;
+  return n;
+}
+
+function renderBuilds() {
+  const grid = document.getElementById('builds-grid');
+  const countEl = document.getElementById('builds-count');
+  if (!SMOGON) {
+    grid.innerHTML = '<p class="no-build-text">Competitive build data didn\'t load. Try refreshing the page.</p>';
+    countEl.textContent = '';
+    return;
+  }
+
+  const q = document.getElementById('builds-search').value.trim().toLowerCase();
+  const tierFilter = document.getElementById('builds-tier-filter').value;
+  const sortBy = document.getElementById('builds-sort').value;
+
+  let list = DEX.filter(p => SMOGON[p.id]);
+  if (tierFilter) {
+    list = list.filter(p => {
+      const e = SMOGON[p.id];
+      const has = sets => sets.some(s => s.tier === tierFilter);
+      return (e.base && has(e.base.sets)) ||
+        (e.mega && e.mega.some(m => has(m.sets))) ||
+        (e.gigantamax && has(e.gigantamax.sets));
+    });
+  }
+  if (q) list = list.filter(p => p.name.toLowerCase().includes(q) || String(p.dex).includes(q));
+
+  if (sortBy === 'name') list = [...list].sort((a, b) => a.name.localeCompare(b.name));
+  else if (sortBy === 'sets') list = [...list].sort((a, b) =>
+    buildSetCount(SMOGON[b.id]) - buildSetCount(SMOGON[a.id]) || a.dex - b.dex);
+  else list = [...list].sort((a, b) => a.dex - b.dex);
+
+  countEl.textContent = `${list.length} of ${Object.keys(SMOGON).length} Pokemon with a published build`;
+
+  grid.innerHTML = '';
+  for (const p of list) {
+    const n = buildSetCount(SMOGON[p.id]);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.style.setProperty('--type-color', typeColor(p));
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-head">
+          <img class="sprite" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite" loading="lazy">
+          <div>
+            <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+            ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
+            <div class="name" style="margin:2px 0 0;">${p.name}</div>
+          </div>
+        </div>
+      </div>
+      <div class="types">
+        ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
+      </div>
+      <div class="build-count-note">${n} competitive set${n === 1 ? '' : 's'} available</div>
+    `;
+    card.addEventListener('click', () => openBuildDetail(p));
+    card.addEventListener('keypress', e => { if (e.key === 'Enter') openBuildDetail(p); });
+    grid.appendChild(card);
+  }
+}
+
+// One Smogon set, rendered as its own small card: tier + set name up top,
+// then ability/item/nature/EVs/IVs/Tera as plain lines (skipping any that
+// this particular set doesn't specify), then its moves as chips.
+function buildSetCardHtml(set) {
+  const lines = [];
+  const ability = altStr(set.ability);
+  const item = altStr(set.item);
+  const nature = altStr(set.nature);
+  const evs = evSpreadStr(set.evs);
+  const ivs = evSpreadStr(set.ivs);
+  const tera = altStr(set.teratypes);
+  if (ability) lines.push(`<div class="build-set-line"><b>Ability:</b> ${ability}</div>`);
+  if (item) lines.push(`<div class="build-set-line"><b>Item:</b> ${item}</div>`);
+  if (nature) lines.push(`<div class="build-set-line"><b>Nature:</b> ${nature}</div>`);
+  if (evs) lines.push(`<div class="build-set-line"><b>EVs:</b> ${evs}</div>`);
+  if (ivs) lines.push(`<div class="build-set-line"><b>IVs:</b> ${ivs}</div>`);
+  if (tera) lines.push(`<div class="build-set-line"><b>Tera Type:</b> ${tera}</div>`);
+  const moves = (set.moves || []).map(m => `<span class="build-move-chip">${moveSlotStr(m)}</span>`).join('');
+  return `
+    <div class="build-set-card">
+      <div class="build-set-head">
+        <span class="guide-pill">${tierLabel(set.tier)}</span>
+        <span class="build-set-name">${set.setName}</span>
+      </div>
+      ${lines.join('')}
+      ${moves ? `<div class="build-moves">${moves}</div>` : ''}
+    </div>
+  `;
+}
+
+// A heading for one form's block of sets, naming the form and the exact
+// generation its data came from -- Smogon's own site always tags a set
+// with both, and a Pokemon's mega/gmax form can genuinely be pulled from
+// an older or newer gen than its base form, so this is shown per section
+// rather than once for the whole sheet.
+function buildFormHeadingHtml(label, gen) {
+  return `<div class="build-form-heading">${label} <span class="build-gen-tag">Gen ${gen}</span></div>`;
+}
+
+function openBuildDetail(p) {
+  const entry = SMOGON && SMOGON[p.id];
+  const sheet = document.getElementById('builds-sheet');
+  sheet.style.setProperty('--screen-color', typeColor(p));
+
+  let body = '';
+  const sectionCount = (entry ? (entry.base ? 1 : 0) + (entry.mega ? entry.mega.length : 0) + (entry.gigantamax ? 1 : 0) : 0);
+  if (entry && entry.base) {
+    if (sectionCount > 1) body += buildFormHeadingHtml(`${p.name} (base form)`, entry.base.gen);
+    body += entry.base.sets.map(buildSetCardHtml).join('');
+  }
+  if (entry && entry.mega) {
+    for (const m of entry.mega) {
+      body += buildFormHeadingHtml(m.form, m.gen);
+      body += m.sets.map(buildSetCardHtml).join('');
+    }
+  }
+  if (entry && entry.gigantamax) {
+    body += buildFormHeadingHtml(`Gigantamax ${p.name}`, entry.gigantamax.gen);
+    body += entry.gigantamax.sets.map(buildSetCardHtml).join('');
+  }
+  if (!body) {
+    body = '<p class="no-build-text">No published Smogon build found for this Pokemon.</p>';
+  }
+
+  sheet.innerHTML = `
+    <div class="sheet-screen">
+      <button class="sheet-close" aria-label="Close">&times;</button>
+      <img class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+      <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
+      ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
+      <h2>${p.name}</h2>
+      <div class="types">
+        ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
+      </div>
+    </div>
+    <div class="sheet-body">
+      ${entry ? `<p class="guide-note">Each card below shows the competitive format it's built for (top-left pill, e.g. OU, Ubers, AG, Monotype) and the game generation that build's data came from (top-right). Move slots written as &quot;A or B&quot; mean either works &mdash; pick whichever fits the rest of your team, and try to use a set as-is rather than mixing pieces from two different sets.</p>` : ''}
+      ${body}
+    </div>
+  `;
+  document.getElementById('builds-overlay').classList.add('open');
+}
+
+function closeBuildDetail() {
+  document.getElementById('builds-overlay').classList.remove('open');
 }
 
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'ultra-rare'];
@@ -3074,9 +3407,11 @@ function switchMainView(view) {
   document.getElementById('dex-view').style.display = view === 'dex' ? '' : 'none';
   document.getElementById('guides-view').style.display = view === 'guides' ? '' : 'none';
   document.getElementById('team-view').style.display = view === 'team' ? '' : 'none';
+  document.getElementById('builds-view').style.display = view === 'builds' ? '' : 'none';
   document.getElementById('nav-dex').classList.toggle('active', view === 'dex');
   document.getElementById('nav-guides').classList.toggle('active', view === 'guides');
   document.getElementById('nav-team').classList.toggle('active', view === 'team');
+  document.getElementById('nav-builds').classList.toggle('active', view === 'builds');
   if (view === 'guides' && !document.getElementById('guide-content').innerHTML) {
     renderGuide('catching');
   }
@@ -3085,16 +3420,28 @@ function switchMainView(view) {
 document.getElementById('nav-dex').addEventListener('click', () => switchMainView('dex'));
 document.getElementById('nav-guides').addEventListener('click', () => switchMainView('guides'));
 document.getElementById('nav-team').addEventListener('click', () => switchMainView('team'));
+document.getElementById('nav-builds').addEventListener('click', () => switchMainView('builds'));
 
 document.getElementById('overlay').addEventListener('click', e => {
   if (e.target.id === 'overlay') closeDetail();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+document.getElementById('builds-overlay').addEventListener('click', e => {
+  if (e.target.id === 'builds-overlay') closeBuildDetail();
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  closeDetail();
+  closeBuildDetail();
+});
 
 document.getElementById('search').addEventListener('input', render);
 document.getElementById('type-filter').addEventListener('change', render);
 document.getElementById('biome-filter').addEventListener('change', render);
 document.getElementById('sort').addEventListener('change', render);
+
+document.getElementById('builds-search').addEventListener('input', renderBuilds);
+document.getElementById('builds-tier-filter').addEventListener('change', renderBuilds);
+document.getElementById('builds-sort').addEventListener('change', renderBuilds);
 
 document.getElementById('voice-select').addEventListener('change', e => {
   try { localStorage.setItem('pokedex-voice', e.target.value); } catch (err) {}
