@@ -880,6 +880,36 @@
   .cry-btn.playing { animation: wiggle 0.5s ease infinite; background: var(--accent); color: #fff; }
   .cry-btn:disabled { opacity: 0.45; cursor: not-allowed; animation: none; }
 
+  .sheet-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 4px;
+  }
+  .sheet-actions .cry-btn { margin: 0; }
+  .sheet-shiny-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: none;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+  }
+  .sheet-shiny-btn:hover { filter: brightness(1.06); }
+  .sheet-shiny-btn.active {
+    background: linear-gradient(135deg, #ffe08a, #ffb238);
+    color: #4a3000;
+    box-shadow: 0 0 0 2px #fff, 0 2px 8px rgba(255,178,56,0.55);
+  }
+
   .spawn-row {
     border-top: 1px dashed var(--line);
     padding: 10px 0;
@@ -1118,6 +1148,12 @@ let EVOLVES_FROM = {};
 // free; pass shiny:false explicitly for a spot that should never go shiny.
 let SHINY_MODE = false;
 try { SHINY_MODE = localStorage.getItem('pokedex-shiny') === 'on'; } catch (e) {}
+// Per-sheet shiny view: lets a player flip just the Pokemon they're currently
+// looking at between shiny/normal without touching the site-wide SHINY_MODE
+// toggle. Reset to match SHINY_MODE every time a new sheet is opened.
+let SHEET_SHINY = false;
+let CURRENT_FORM_DATA = null;
+let CURRENT_FORM_LABEL = '';
 function spriteUrl(p, opts) {
   const id = (opts && opts.overrideId) || p.spriteId || p.dex;
   const shiny = opts && 'shiny' in opts ? opts.shiny : SHINY_MODE;
@@ -1485,20 +1521,20 @@ function formThumbsHtml(p) {
   const megaThumbs = (p.megaEvolutions || [])
     .map((m, i) => m.spriteId
       ? `<button type="button" class="form-thumb" data-mega-index="${i}" title="${m.form}">
-          <img src="${spriteUrl(p, { overrideId: m.spriteId })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${m.form}">
+          <img src="${spriteUrl(p, { overrideId: m.spriteId, shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${m.form}">
         </button>`
       : '')
     .join('');
   const gmaxThumb = p.gigantamax && p.gigantamax.spriteId
     ? `<button type="button" class="form-thumb" data-gmax="1" title="Gigantamax ${p.name}">
-        <img src="${spriteUrl(p, { overrideId: p.gigantamax.spriteId })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="Gigantamax ${p.name}">
+        <img src="${spriteUrl(p, { overrideId: p.gigantamax.spriteId, shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="Gigantamax ${p.name}">
       </button>`
     : '';
   if (!megaThumbs && !gmaxThumb) return '';
   return `
     <div class="form-thumbs">
       <button type="button" class="form-thumb active" data-form-base="1" title="${p.name} (base form)">
-        <img src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name}">
+        <img src="${spriteUrl(p, { shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name}">
       </button>
       ${megaThumbs}
       ${gmaxThumb}
@@ -1506,13 +1542,27 @@ function formThumbsHtml(p) {
   `;
 }
 
+// Re-points every form-thumb's own image (base/mega/gmax) at the current
+// SHEET_SHINY state, without rebuilding the row itself.
+function refreshSheetThumbSprites(sheet, p) {
+  sheet.querySelectorAll('.form-thumb').forEach(btn => {
+    const img = btn.querySelector('img');
+    if (!img) return;
+    let overrideId = null;
+    if (btn.dataset.megaIndex !== undefined) overrideId = p.megaEvolutions[Number(btn.dataset.megaIndex)].spriteId;
+    else if (btn.dataset.gmax !== undefined) overrideId = p.gigantamax.spriteId;
+    img.src = spriteUrl(p, { overrideId, shiny: SHEET_SHINY });
+  });
+}
+
 // Swaps the big sprite (and the type badges, if the form has different
 // types) without re-rendering the whole sheet. formData is a megaEvolutions
 // entry, {spriteId} for gigantamax, or null to go back to the base form.
+// Always honors the sheet's own SHEET_SHINY state (not the site-wide toggle).
 function selectForm(sheet, p, formData, label) {
   const img = sheet.querySelector('#detail-sprite');
   img.onerror = function () { this.onerror = null; this.src = SPRITE_FALLBACK; };
-  img.src = spriteUrl(p, { overrideId: formData ? formData.spriteId : null });
+  img.src = spriteUrl(p, { overrideId: formData ? formData.spriteId : null, shiny: SHEET_SHINY });
   const labelEl = sheet.querySelector('#detail-form-label');
   if (labelEl) labelEl.textContent = label || '';
   const typesEl = sheet.querySelector('.sheet-screen .types');
@@ -1742,6 +1792,9 @@ function flavorHtml(p) {
 function openDetail(p) {
   if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
   CURRENT_DETAIL_POKEMON = p;
+  SHEET_SHINY = SHINY_MODE;
+  CURRENT_FORM_DATA = null;
+  CURRENT_FORM_LABEL = '';
   const sheet = document.getElementById('sheet');
   sheet.style.setProperty('--screen-color', typeColor(p));
   let spawnHtml;
@@ -1789,13 +1842,16 @@ function openDetail(p) {
   sheet.innerHTML = `
     <div class="sheet-screen">
       <button class="sheet-close" aria-label="Close">&times;</button>
-      <img id="detail-sprite" class="sprite-lg" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+      <img id="detail-sprite" class="sprite-lg" src="${spriteUrl(p, { shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
       ${formThumbsHtml(p)}
       <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
       ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
       <h2>${p.name}</h2>
       <span id="detail-form-label" class="form-label"></span>
-      <button type="button" class="cry-btn" aria-label="Play ${p.name}'s cry" title="Play cry">&#9654; Cry</button>
+      <div class="sheet-actions">
+        <button type="button" class="cry-btn" aria-label="Play ${p.name}'s cry" title="Play cry">&#9654; Cry</button>
+        <button type="button" class="sheet-shiny-btn${SHEET_SHINY ? ' active' : ''}" aria-label="Toggle shiny form for ${p.name}" title="${SHEET_SHINY ? 'Viewing shiny form (click for normal)' : 'View shiny form'}">&#9733; Shiny</button>
+      </div>
       <div class="types">
         ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
       </div>
@@ -1824,6 +1880,8 @@ function openDetail(p) {
       } else {
         label = '';
       }
+      CURRENT_FORM_DATA = formData;
+      CURRENT_FORM_LABEL = label;
       selectForm(sheet, p, formData, label);
       sheet.querySelectorAll('.form-thumb').forEach(t => t.classList.remove('active'));
       const matchingThumb = btn.classList.contains('form-thumb')
@@ -1846,6 +1904,16 @@ function openDetail(p) {
   const cryBtn = sheet.querySelector('.cry-btn');
   if (cryBtn) {
     cryBtn.addEventListener('click', () => playCry(p, cryBtn));
+  }
+  const shinyBtn = sheet.querySelector('.sheet-shiny-btn');
+  if (shinyBtn) {
+    shinyBtn.addEventListener('click', () => {
+      SHEET_SHINY = !SHEET_SHINY;
+      shinyBtn.classList.toggle('active', SHEET_SHINY);
+      shinyBtn.title = SHEET_SHINY ? 'Viewing shiny form (click for normal)' : 'View shiny form';
+      selectForm(sheet, p, CURRENT_FORM_DATA, CURRENT_FORM_LABEL);
+      refreshSheetThumbSprites(sheet, p);
+    });
   }
   document.getElementById('overlay').classList.add('open');
   document.body.classList.add('scroll-locked');
