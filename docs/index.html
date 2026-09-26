@@ -782,14 +782,19 @@
   .sheet .dex { display: inline-block; margin-bottom: 6px; }
   .sheet .types { justify-content: center; margin-top: 6px; }
   .form-label {
-    display: block;
+    display: inline-block;
     font-size: 12.5px;
     font-weight: 700;
-    color: var(--muted);
+    color: #fff;
+    background: rgba(0,0,0,0.45);
+    padding: 3px 10px;
+    border-radius: 999px;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.3);
     margin-top: -2px;
     margin-bottom: 4px;
     min-height: 15px;
   }
+  .form-label:empty { display: block; background: none; padding: 0; }
   .form-thumbs {
     display: flex;
     justify-content: center;
