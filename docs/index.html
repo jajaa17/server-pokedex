@@ -1929,6 +1929,7 @@ let CURRENT_DETAIL_POKEMON = null;
 function playCry(p, btn) {
   if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
   const audio = new Audio(cryUrl(p));
+  audio.volume = 0.45; // cries come out of PokeAPI very hot/loud at full volume
   currentCryAudio = audio;
   btn.classList.add('playing');
   const reset = () => { btn.classList.remove('playing'); if (currentCryAudio === audio) currentCryAudio = null; };
