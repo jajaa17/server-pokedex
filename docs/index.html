@@ -788,6 +788,25 @@
   .speak-btn.speaking { animation: wiggle 0.6s ease infinite; background: var(--accent); }
   .speak-btn:disabled { opacity: 0.4; cursor: not-allowed; animation: none; }
 
+  .cry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 2px 0 4px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: none;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+  }
+  .cry-btn:hover { filter: brightness(1.06); }
+  .cry-btn.playing { animation: wiggle 0.5s ease infinite; background: var(--accent); color: #fff; }
+  .cry-btn:disabled { opacity: 0.45; cursor: not-allowed; animation: none; }
+
   .spawn-row {
     border-top: 1px dashed var(--line);
     padding: 10px 0;
@@ -1017,6 +1036,13 @@ let EVOLVES_FROM = {};
 function spriteUrl(p) {
   const id = p.spriteId || p.dex;
   return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+}
+// PokeAPI's "cries" repo is the sibling project to the "sprites" repo above
+// and uses the exact same pokemon-resource id numbering, so this reuses the
+// same spriteId/dex fallback logic as spriteUrl().
+function cryUrl(p) {
+  const id = p.spriteId || p.dex;
+  return `https://raw.githubusercontent.com/PokeAPI/cries/main/cries/pokemon/latest/${id}.ogg`;
 }
 const SPRITE_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="#9096a6" stroke-width="1.5"/><line x1="2" y1="12" x2="22" y2="12" stroke="#9096a6" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="#16181d" stroke="#9096a6" stroke-width="1.5"/></svg>`
@@ -1548,6 +1574,7 @@ function flavorHtml(p) {
 }
 
 function openDetail(p) {
+  if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
   const sheet = document.getElementById('sheet');
   sheet.style.setProperty('--screen-color', typeColor(p));
   let spawnHtml;
@@ -1599,6 +1626,7 @@ function openDetail(p) {
       <span class="dex">#${String(p.dex).padStart(4, '0')}</span>
       ${p.regionalForm ? `<span class="form-badge">${p.regionalForm}</span>` : ''}
       <h2>${p.name}</h2>
+      <button type="button" class="cry-btn" aria-label="Play ${p.name}'s cry" title="Play cry">&#9654; Cry</button>
       <div class="types">
         ${p.types.map(t => `<span class="type-badge t-${t}">${t}</span>`).join('')}
       </div>
@@ -1623,14 +1651,34 @@ function openDetail(p) {
   if (speakBtn) {
     speakBtn.addEventListener('click', () => speak(p.flavorText, speakBtn));
   }
+  const cryBtn = sheet.querySelector('.cry-btn');
+  if (cryBtn) {
+    cryBtn.addEventListener('click', () => playCry(p, cryBtn));
+  }
   document.getElementById('overlay').classList.add('open');
   document.body.classList.add('scroll-locked');
+}
+
+// Shared across calls so opening a new Pokemon (or closing the sheet) stops
+// whatever cry was still playing instead of letting two overlap.
+let currentCryAudio = null;
+
+function playCry(p, btn) {
+  if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
+  const audio = new Audio(cryUrl(p));
+  currentCryAudio = audio;
+  btn.classList.add('playing');
+  const reset = () => { btn.classList.remove('playing'); if (currentCryAudio === audio) currentCryAudio = null; };
+  audio.addEventListener('ended', reset);
+  audio.addEventListener('error', () => { reset(); btn.title = `No cry file found for ${p.name}`; });
+  audio.play().catch(reset);
 }
 
 function closeDetail() {
   document.getElementById('overlay').classList.remove('open');
   document.body.classList.remove('scroll-locked');
   if (window.speechSynthesis) window.speechSynthesis.cancel();
+  if (currentCryAudio) { currentCryAudio.pause(); currentCryAudio = null; }
 }
 
 // ============================================================
@@ -2547,7 +2595,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 // clicked, instead of wiring a sound call into every individual button.
 document.addEventListener('click', e => {
   const t = e.target;
-  if (t.closest('#sfx-toggle, .speak-btn')) return; // these already play their own sound
+  if (t.closest('#sfx-toggle, .speak-btn, .cry-btn')) return; // these already play their own sound
   if (t.closest('.card, .evo-tree-name[data-goto]')) { sfxSelect(); return; }
   if (t.closest('.sheet-close, .team-slot-remove, #team-export-close, #team-report-close')) { sfxBack(); return; }
   if (t.closest('#team-export, #team-export-copy, #team-report-btn')) { sfxConfirm(); return; }
