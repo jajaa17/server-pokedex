@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Server Pokedex</title>
 <script>
   // Applied before first paint so switching themes never flashes the wrong one.
@@ -81,7 +81,9 @@
     --mega-tag-canon: #c3a8ff; --mega-tag-bonus: #e0b45a; --mega-tag-za: #ff8fc0;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
+  html, body { margin: 0; height: 100%; overflow-x: hidden; }
+  body.scroll-locked { overflow-y: hidden; }
+  img { max-width: 100%; }
   body {
     background:
       radial-gradient(circle at 8% 14%, var(--confetti) 0 3px, transparent 4px),
@@ -105,7 +107,8 @@
 
   header {
     position: relative;
-    padding: 26px 20px 34px;
+    /* the safe-area add-on keeps the title clear of an iPhone's notch/Dynamic Island */
+    padding: calc(26px + env(safe-area-inset-top)) 20px 34px;
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
     border-radius: 0 0 28px 28px;
     box-shadow: 0 6px 0 rgba(0,0,0,0.08), 0 10px 24px rgba(200,20,20,0.25);
@@ -193,7 +196,8 @@
     color: var(--text);
     padding: 10px 14px;
     border-radius: 999px;
-    font-size: 14px;
+    /* 16px stops iOS Safari auto-zooming the page when a field is tapped */
+    font-size: 16px;
     font-family: var(--body);
     font-weight: 600;
     box-shadow: 0 2px 0 rgba(0,0,0,0.04);
@@ -397,7 +401,8 @@
     color: var(--text);
     padding: 7px 10px;
     border-radius: 8px;
-    font-size: 13px;
+    /* 16px stops iOS Safari auto-zooming the page when a field is tapped */
+    font-size: 16px;
     font-family: var(--body);
     font-weight: 600;
   }
@@ -417,8 +422,18 @@
     font-family: var(--mono);
   }
   .tb-iv-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-  .tb-ev-total { font-size: 11.5px; color: var(--muted); margin-top: 4px; text-align: right; }
-  .tb-ev-total.over { color: var(--accent); font-weight: 700; }
+  .tb-ev-total {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--muted);
+    margin-top: 4px;
+    text-align: center;
+  }
+  .tb-ev-total.over span { color: var(--accent); font-weight: 700; }
   .tb-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .team-export-panel {
     max-width: 700px;
@@ -820,7 +835,7 @@
   .no-spawn-text { color: var(--muted); font-size: 13px; padding-top: 10px; }
 
   footer {
-    padding: 24px 20px;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom));
     text-align: center;
     color: var(--muted);
     font-size: 12px;
@@ -829,9 +844,69 @@
   footer a { color: var(--blue); font-weight: 700; text-decoration: none; }
   footer a:hover { text-decoration: underline; }
 
+  /* ---- Mobile & tablet (phones, iPads, Android tablets, foldables) ---- */
+  @media (max-width: 720px) {
+    /* One team slot per row once two 320px-min cards can no longer sit
+       side by side comfortably -- avoids an awkward half-width column. */
+    .team-slots { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    /* Trim the side padding used throughout so content gets more of a
+       narrow phone's width back, instead of losing 40px to gutters. */
+    header, .main-nav, .controls, .guide-tabs, .guide-content,
+    #grid, .team-toolbar, .team-slots, .team-export-panel, footer {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    /* The search box and the three filter/sort dropdowns wrapped at
+       whatever width their content happened to need before; on a phone
+       that reads as a ragged, hard-to-scan row. Two even columns instead. */
+    .controls { gap: 8px; }
+    .controls input[type="search"] { flex: 1 1 100%; min-width: 0; }
+    .controls select { flex: 1 1 calc(50% - 4px); min-width: 0; }
+
+    /* Six EV/IV boxes across is fine with a mouse, but on a ~360-400px
+       phone each box is under 40px wide -- too small to tap accurately.
+       Three-and-three keeps every box a comfortable touch target. */
+    .tb-ev-row, .tb-iv-row, .tb-ev-total { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
+    .tb-ev-row input, .tb-iv-row input {
+      padding: 9px 2px;
+      /* 16px stops iOS Safari auto-zooming the page when a box is tapped */
+      font-size: 16px;
+    }
+
+    /* Bigger, easier-to-hit close/remove buttons -- the original sizes
+       were sized for a mouse cursor, not a fingertip. */
+    .sheet-close { width: 38px; height: 38px; font-size: 18px; }
+    .team-slot-remove { padding: 8px 12px; font-size: 19px; }
+    .icon-btn { width: 44px; height: 44px; }
+
+    /* A table with several columns (the team weakness/speed tables) can
+       still run wider than a narrow phone screen even with its cell text
+       wrapping normally -- let it scroll sideways as a fallback instead
+       of squeezing text or breaking the page's own width. */
+    .guide-table { display: block; overflow-x: auto; max-width: 100%; }
+
+    #team-export-text { font-size: 14px; min-height: 200px; }
+  }
+
   @media (max-width: 480px) {
     header h1 { font-size: 22px; }
     .mascot { font-size: 26px; top: 12px; right: 14px; }
+    header p { font-size: 13px; }
+    .sheet { border-radius: 18px; }
+    .sprite-lg { width: 96px; height: 96px; }
+    #overlay { padding: 24px 10px; }
+  }
+
+  /* Landscape phones: the header/nav stack eats a lot of the limited
+     vertical space, so tighten the vertical rhythm specifically here
+     rather than fighting the portrait rules above. */
+  @media (max-width: 900px) and (max-height: 450px) and (orientation: landscape) {
+    header { padding-top: calc(14px + env(safe-area-inset-top)); padding-bottom: 18px; }
+    header p { display: none; }
   }
 </style>
 </head>
@@ -1549,10 +1624,12 @@ function openDetail(p) {
     speakBtn.addEventListener('click', () => speak(p.flavorText, speakBtn));
   }
   document.getElementById('overlay').classList.add('open');
+  document.body.classList.add('scroll-locked');
 }
 
 function closeDetail() {
   document.getElementById('overlay').classList.remove('open');
+  document.body.classList.remove('scroll-locked');
   if (window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
