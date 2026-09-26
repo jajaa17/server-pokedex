@@ -656,7 +656,7 @@
     padding: 0 20px;
   }
   .builds-credit a { color: var(--accent); font-weight: 700; }
-  .build-form-heading {
+  .build-form-heading-single {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -665,11 +665,10 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--muted);
-    margin: 18px 0 8px;
+    margin: 0 0 10px;
     border-bottom: 1px solid var(--line);
     padding-bottom: 6px;
   }
-  .build-form-heading:first-child { margin-top: 0; }
   .build-gen-tag {
     text-transform: none;
     letter-spacing: normal;
@@ -680,6 +679,42 @@
     padding: 2px 9px;
     border-radius: 999px;
     flex: 0 0 auto;
+  }
+  /* Form/format tab buttons in the build detail sheet -- clicking these
+     swaps which (small) slice of sets is shown instead of the player
+     having to scroll past every format to find the one they want. */
+  .build-tab-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .build-tier-tab-row { margin-bottom: 14px; }
+  .build-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--panel-2);
+    border: 2px solid var(--line);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--body);
+    cursor: pointer;
+  }
+  .build-tab-btn:hover { border-color: var(--accent); }
+  .build-tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .build-tab-btn.active .build-gen-tag { background: rgba(255,255,255,0.25); color: #fff; }
+  .build-tab-btn.active .build-tab-count { background: rgba(255,255,255,0.25); color: #fff; }
+  .build-tab-count {
+    background: var(--panel);
+    color: var(--muted);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 999px;
   }
   .build-set-card {
     background: var(--panel-2);
@@ -1724,40 +1759,81 @@ function buildSetCardHtml(set) {
   `;
 }
 
-// A heading for one form's block of sets, naming the form and the exact
-// generation its data came from -- Smogon's own site always tags a set
-// with both, and a Pokemon's mega/gmax form can genuinely be pulled from
-// an older or newer gen than its base form, so this is shown per section
-// rather than once for the whole sheet.
-function buildFormHeadingHtml(label, gen) {
-  return `<div class="build-form-heading">${label} <span class="build-gen-tag">Gen ${gen}</span></div>`;
+// Splits one form's flat set list back out by tier, preserving the order
+// tiers first appear in (Smogon's own data already orders each species'
+// tiers by relevance) -- this is what the Format tab row switches between.
+function groupSetsByTier(sets) {
+  const order = [];
+  const byTier = new Map();
+  for (const s of sets) {
+    if (!byTier.has(s.tier)) { byTier.set(s.tier, []); order.push(s.tier); }
+    byTier.get(s.tier).push(s);
+  }
+  return order.map(tier => ({ tier, sets: byTier.get(tier) }));
+}
+
+// Flattens one dex entry's base/mega/gigantamax data into a plain list of
+// "forms" to tab between -- each carries its own generation, since a
+// Pokemon's Mega or Gigantamax build can genuinely come from an older or
+// newer gen than its base form's build.
+function buildFormsList(p, entry) {
+  const forms = [];
+  if (!entry) return forms;
+  if (entry.base) forms.push({ label: `${p.name} (Base Form)`, gen: entry.base.gen, sets: entry.base.sets });
+  if (entry.mega) for (const m of entry.mega) forms.push({ label: m.form, gen: m.gen, sets: m.sets });
+  if (entry.gigantamax) forms.push({ label: `Gigantamax ${p.name}`, gen: entry.gigantamax.gen, sets: entry.gigantamax.sets });
+  return forms;
+}
+
+// Sheet-local state for the currently-open build detail: which form tab
+// and which format/tier tab are selected, so switching between them just
+// re-renders the (small) set-list area instead of the whole sheet, and a
+// player never has to scroll through every format to find the one they
+// want -- this mirrors Smogon's own per-format tabs.
+let CURRENT_BUILD_POKEMON = null;
+let BUILD_SHEET_FORMS = [];
+let BUILD_SHEET_FORM_IDX = 0;
+let BUILD_SHEET_TIER = null;
+
+function renderBuildSheetBody() {
+  const content = document.getElementById('build-sheet-content');
+  const forms = BUILD_SHEET_FORMS;
+  if (!forms.length) {
+    content.innerHTML = '<p class="no-build-text">No published Smogon build found for this Pokemon.</p>';
+    return;
+  }
+
+  const form = forms[BUILD_SHEET_FORM_IDX] || forms[0];
+  const tierGroups = groupSetsByTier(form.sets);
+  if (!tierGroups.some(g => g.tier === BUILD_SHEET_TIER)) BUILD_SHEET_TIER = tierGroups[0].tier;
+  const activeGroup = tierGroups.find(g => g.tier === BUILD_SHEET_TIER);
+
+  let html = '';
+  if (forms.length > 1) {
+    html += `<div class="build-tab-row">${forms.map((f, i) => `
+      <button type="button" class="build-tab-btn${i === BUILD_SHEET_FORM_IDX ? ' active' : ''}" data-form-idx="${i}">${f.label} <span class="build-gen-tag">Gen ${f.gen}</span></button>
+    `).join('')}</div>`;
+  } else {
+    html += `<div class="build-form-heading-single">${form.label} <span class="build-gen-tag">Gen ${form.gen}</span></div>`;
+  }
+  if (tierGroups.length > 1) {
+    html += `<div class="build-tab-row build-tier-tab-row">${tierGroups.map(g => `
+      <button type="button" class="build-tab-btn build-tier-tab-btn${g.tier === BUILD_SHEET_TIER ? ' active' : ''}" data-tier="${g.tier}">${tierLabel(g.tier)} <span class="build-tab-count">${g.sets.length}</span></button>
+    `).join('')}</div>`;
+  }
+  html += `<div class="build-set-list">${activeGroup.sets.map(buildSetCardHtml).join('')}</div>`;
+  content.innerHTML = html;
 }
 
 function openBuildDetail(p) {
   const entry = SMOGON && SMOGON[p.id];
+  CURRENT_BUILD_POKEMON = p;
+  BUILD_SHEET_FORMS = buildFormsList(p, entry);
+  BUILD_SHEET_FORM_IDX = 0;
+  BUILD_SHEET_TIER = null;
+
   const sheet = document.getElementById('builds-sheet');
   sheet.style.setProperty('--screen-color', typeColor(p));
-
-  let body = '';
-  const sectionCount = (entry ? (entry.base ? 1 : 0) + (entry.mega ? entry.mega.length : 0) + (entry.gigantamax ? 1 : 0) : 0);
-  if (entry && entry.base) {
-    if (sectionCount > 1) body += buildFormHeadingHtml(`${p.name} (base form)`, entry.base.gen);
-    body += entry.base.sets.map(buildSetCardHtml).join('');
-  }
-  if (entry && entry.mega) {
-    for (const m of entry.mega) {
-      body += buildFormHeadingHtml(m.form, m.gen);
-      body += m.sets.map(buildSetCardHtml).join('');
-    }
-  }
-  if (entry && entry.gigantamax) {
-    body += buildFormHeadingHtml(`Gigantamax ${p.name}`, entry.gigantamax.gen);
-    body += entry.gigantamax.sets.map(buildSetCardHtml).join('');
-  }
-  if (!body) {
-    body = '<p class="no-build-text">No published Smogon build found for this Pokemon.</p>';
-  }
-
   sheet.innerHTML = `
     <div class="sheet-screen">
       <button class="sheet-close" aria-label="Close">&times;</button>
@@ -1770,12 +1846,29 @@ function openBuildDetail(p) {
       </div>
     </div>
     <div class="sheet-body">
-      ${entry ? `<p class="guide-note">Each card below shows the competitive format it's built for (top-left pill, e.g. OU, Ubers, AG, Monotype) and the game generation that build's data came from (top-right). Move slots written as &quot;A or B&quot; mean either works &mdash; pick whichever fits the rest of your team, and try to use a set as-is rather than mixing pieces from two different sets.</p>` : ''}
-      ${body}
+      ${entry ? `<p class="guide-note">Tap a form or format button below to jump straight to that build &mdash; no need to scroll past the others. Move slots written as &quot;A or B&quot; mean either works, so pick whichever fits the rest of your team.</p>` : ''}
+      <div id="build-sheet-content"></div>
     </div>
   `;
+  renderBuildSheetBody();
   document.getElementById('builds-overlay').classList.add('open');
 }
+
+document.getElementById('builds-sheet').addEventListener('click', e => {
+  if (e.target.closest('.sheet-close')) { closeBuildDetail(); return; }
+  const formBtn = e.target.closest('.build-tab-btn[data-form-idx]');
+  if (formBtn) {
+    BUILD_SHEET_FORM_IDX = Number(formBtn.dataset.formIdx);
+    BUILD_SHEET_TIER = null; // switching form resets to that form's first format tab
+    renderBuildSheetBody();
+    return;
+  }
+  const tierBtn = e.target.closest('.build-tab-btn[data-tier]');
+  if (tierBtn) {
+    BUILD_SHEET_TIER = tierBtn.dataset.tier;
+    renderBuildSheetBody();
+  }
+});
 
 function closeBuildDetail() {
   document.getElementById('builds-overlay').classList.remove('open');
