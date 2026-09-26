@@ -457,6 +457,42 @@
     text-align: center;
   }
   .tb-ev-total.over span { color: var(--accent); font-weight: 700; }
+  /* EV/IV quick-set buttons -- one 252/0 (or 31/0) pair under each stat's
+     input, plus a Clear/Max/Min button in that field's own header, so
+     hitting a common value never requires backspacing and retyping. */
+  .tb-field-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px; }
+  .tb-field-header label { margin-bottom: 0; }
+  .tb-field-header-actions { display: flex; gap: 6px; }
+  .tb-mini-btn {
+    background: var(--panel-2);
+    border: 2px solid var(--line);
+    color: var(--text);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-family: var(--body);
+  }
+  .tb-mini-btn:hover { border-color: var(--accent); }
+  .tb-stat-cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .tb-quick-row { display: flex; gap: 3px; }
+  .tb-quick-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: var(--mono);
+  }
+  .tb-quick-btn:hover { border-color: var(--accent); color: var(--accent); }
   .tb-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .team-export-panel {
     max-width: 700px;
@@ -1148,12 +1184,13 @@
     /* Six EV/IV boxes across is fine with a mouse, but on a ~360-400px
        phone each box is under 40px wide -- too small to tap accurately.
        Three-and-three keeps every box a comfortable touch target. */
-    .tb-ev-row, .tb-iv-row, .tb-ev-total { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
+    .tb-ev-row, .tb-iv-row, .tb-ev-total { grid-template-columns: repeat(3, 1fr); row-gap: 10px; }
     .tb-ev-row input, .tb-iv-row input {
       padding: 9px 2px;
       /* 16px stops iOS Safari auto-zooming the page when a box is tapped */
       font-size: 16px;
     }
+    .tb-quick-btn { padding: 6px 0; font-size: 11px; }
 
     /* Bigger, easier-to-hit close/remove buttons -- the original sizes
        were sized for a mouse cursor, not a fingertip. */
@@ -3111,11 +3148,28 @@ function slotHtml(slot, idx) {
   };
 
   const evTotal = Object.values(slot.evs).reduce((a, b) => a + b, 0);
-  const evInputs = STAT_LABELS.map(([k, l]) =>
-    `<input type="text" inputmode="numeric" data-field="ev-${k}" data-slot="${idx}" value="${slot.evs[k]}" title="${l} EVs">`).join('');
+  // Each stat gets its own 252/0 quick-set buttons under the input, so a
+  // player doesn't have to backspace-and-retype to reach a common value --
+  // 252 and 0 cover the vast majority of real competitive EV spreads.
+  const evInputs = STAT_LABELS.map(([k, l]) => `
+    <div class="tb-stat-cell">
+      <input type="text" inputmode="numeric" data-field="ev-${k}" data-slot="${idx}" value="${slot.evs[k]}" title="${l} EVs">
+      <div class="tb-quick-row">
+        <button type="button" class="tb-quick-btn" data-action="ev-set" data-slot="${idx}" data-stat="${k}" data-value="252" title="Set ${l} EVs to 252">252</button>
+        <button type="button" class="tb-quick-btn" data-action="ev-set" data-slot="${idx}" data-stat="${k}" data-value="0" title="Set ${l} EVs to 0">0</button>
+      </div>
+    </div>
+  `).join('');
   const evLabelsRow = STAT_LABELS.map(([k, l]) => `<span>${l}</span>`).join('');
-  const ivInputs = STAT_LABELS.map(([k, l]) =>
-    `<input type="text" inputmode="numeric" data-field="iv-${k}" data-slot="${idx}" value="${slot.ivs[k]}" title="${l} IVs">`).join('');
+  const ivInputs = STAT_LABELS.map(([k, l]) => `
+    <div class="tb-stat-cell">
+      <input type="text" inputmode="numeric" data-field="iv-${k}" data-slot="${idx}" value="${slot.ivs[k]}" title="${l} IVs">
+      <div class="tb-quick-row">
+        <button type="button" class="tb-quick-btn" data-action="iv-set" data-slot="${idx}" data-stat="${k}" data-value="31" title="Set ${l} IVs to 31">31</button>
+        <button type="button" class="tb-quick-btn" data-action="iv-set" data-slot="${idx}" data-stat="${k}" data-value="0" title="Set ${l} IVs to 0">0</button>
+      </div>
+    </div>
+  `).join('');
 
   const natureOptions = Object.keys(NATURES).map(n => {
     const info = NATURES[n];
@@ -3155,12 +3209,21 @@ function slotHtml(slot, idx) {
         <select data-field="nature" data-slot="${idx}">${natureOptions}</select>
       </div>
       <div class="tb-field">
-        <label>EVs (${evTotal} / 510)</label>
+        <div class="tb-field-header">
+          <label>EVs (${evTotal} / 510)</label>
+          <button type="button" class="tb-mini-btn" data-action="ev-clear-all" data-slot="${idx}" title="Set every EV to 0">Clear</button>
+        </div>
         <div class="tb-ev-row">${evInputs}</div>
         <div class="tb-ev-total${evTotal > 510 ? ' over' : ''}">${evLabelsRow}</div>
       </div>
       <div class="tb-field">
-        <label>IVs</label>
+        <div class="tb-field-header">
+          <label>IVs</label>
+          <div class="tb-field-header-actions">
+            <button type="button" class="tb-mini-btn" data-action="iv-set-all" data-slot="${idx}" data-value="31" title="Set every IV to 31 (perfect IVs)">Max</button>
+            <button type="button" class="tb-mini-btn" data-action="iv-set-all" data-slot="${idx}" data-value="0" title="Set every IV to 0">Min</button>
+          </div>
+        </div>
         <div class="tb-iv-row">${ivInputs}</div>
       </div>
       <div class="tb-field">
@@ -3229,11 +3292,67 @@ document.getElementById('team-slots').addEventListener('input', e => {
 });
 
 document.getElementById('team-slots').addEventListener('click', e => {
-  const btn = e.target.closest('[data-action="remove"]');
-  if (!btn) return;
-  const idx = parseInt(btn.getAttribute('data-slot'), 10);
-  TEAM[idx] = null;
-  renderTeamBuilder();
+  const removeBtn = e.target.closest('[data-action="remove"]');
+  if (removeBtn) {
+    const idx = parseInt(removeBtn.getAttribute('data-slot'), 10);
+    TEAM[idx] = null;
+    renderTeamBuilder();
+    return;
+  }
+
+  // Per-stat 252/0 EV quick-set -- same 510-total cap the manual EV input
+  // enforces, so a button can never push the team over the real in-game cap.
+  const evBtn = e.target.closest('[data-action="ev-set"]');
+  if (evBtn) {
+    const idx = parseInt(evBtn.getAttribute('data-slot'), 10);
+    const slot = TEAM[idx];
+    if (!slot) return;
+    const stat = evBtn.getAttribute('data-stat');
+    const requested = parseInt(evBtn.getAttribute('data-value'), 10);
+    const otherTotal = Object.entries(slot.evs).reduce((sum, [k, v]) => sum + (k === stat ? 0 : v), 0);
+    slot.evs[stat] = Math.max(0, Math.min(requested, 252, 510 - otherTotal));
+    saveTeam();
+    renderTeamBuilder();
+    return;
+  }
+
+  // "Clear" resets every EV on this Pokemon to 0 in one tap.
+  const evClearBtn = e.target.closest('[data-action="ev-clear-all"]');
+  if (evClearBtn) {
+    const idx = parseInt(evClearBtn.getAttribute('data-slot'), 10);
+    const slot = TEAM[idx];
+    if (!slot) return;
+    for (const k of Object.keys(slot.evs)) slot.evs[k] = 0;
+    saveTeam();
+    renderTeamBuilder();
+    return;
+  }
+
+  // Per-stat 31/0 IV quick-set.
+  const ivBtn = e.target.closest('[data-action="iv-set"]');
+  if (ivBtn) {
+    const idx = parseInt(ivBtn.getAttribute('data-slot'), 10);
+    const slot = TEAM[idx];
+    if (!slot) return;
+    const stat = ivBtn.getAttribute('data-stat');
+    slot.ivs[stat] = parseInt(ivBtn.getAttribute('data-value'), 10);
+    saveTeam();
+    renderTeamBuilder();
+    return;
+  }
+
+  // "Max"/"Min" sets all 6 IVs at once -- covers the common "perfect IVs"
+  // and "0 IVs for a min-Speed trick room set" cases in one tap.
+  const ivAllBtn = e.target.closest('[data-action="iv-set-all"]');
+  if (ivAllBtn) {
+    const idx = parseInt(ivAllBtn.getAttribute('data-slot'), 10);
+    const slot = TEAM[idx];
+    if (!slot) return;
+    const value = parseInt(ivAllBtn.getAttribute('data-value'), 10);
+    for (const k of Object.keys(slot.ivs)) slot.ivs[k] = value;
+    saveTeam();
+    renderTeamBuilder();
+  }
 });
 
 document.getElementById('team-clear').addEventListener('click', () => {
