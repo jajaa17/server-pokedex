@@ -2057,20 +2057,34 @@ function formThumbsHtml(p) {
         <img src="${spriteUrl(p, { overrideId: p.gigantamax.spriteId, shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="Gigantamax ${p.name}">
       </button>`
     : '';
-  if (!megaThumbs && !gmaxThumb) return '';
+  // Other real, in-game-selectable alternate formes that share this same
+  // flat dex entry (Therian formes, Origin formes, appliance Rotoms,
+  // Arceus plates, etc. -- see other_forms_spec.json). Same "only show a
+  // thumb when there's a real sprite id" rule as megas/gmax above (e.g.
+  // Sinistcha-Masterpiece has no distinct sprite, so it's left out of the
+  // strip -- it's still selectable in the Team Builder, just not here).
+  const otherThumbs = (p.otherForms || [])
+    .map((f, i) => f.spriteId
+      ? `<button type="button" class="form-thumb" data-other-index="${i}" title="${f.form}">
+          <img src="${spriteUrl(p, { overrideId: f.spriteId, shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${f.form}">
+        </button>`
+      : '')
+    .join('');
+  if (!megaThumbs && !gmaxThumb && !otherThumbs) return '';
   return `
     <div class="form-thumbs">
       <button type="button" class="form-thumb active" data-form-base="1" title="${p.name} (base form)">
         <img src="${spriteUrl(p, { shiny: SHEET_SHINY })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name}">
       </button>
+      ${otherThumbs}
       ${megaThumbs}
       ${gmaxThumb}
     </div>
   `;
 }
 
-// Re-points every form-thumb's own image (base/mega/gmax) at the current
-// SHEET_SHINY state, without rebuilding the row itself.
+// Re-points every form-thumb's own image (base/mega/gmax/other) at the
+// current SHEET_SHINY state, without rebuilding the row itself.
 function refreshSheetThumbSprites(sheet, p) {
   sheet.querySelectorAll('.form-thumb').forEach(btn => {
     const img = btn.querySelector('img');
@@ -2078,6 +2092,7 @@ function refreshSheetThumbSprites(sheet, p) {
     let overrideId = null;
     if (btn.dataset.megaIndex !== undefined) overrideId = p.megaEvolutions[Number(btn.dataset.megaIndex)].spriteId;
     else if (btn.dataset.gmax !== undefined) overrideId = p.gigantamax.spriteId;
+    else if (btn.dataset.otherIndex !== undefined) overrideId = p.otherForms[Number(btn.dataset.otherIndex)].spriteId;
     img.src = spriteUrl(p, { overrideId, shiny: SHEET_SHINY });
   });
 }
@@ -2404,6 +2419,9 @@ function openDetail(p) {
       } else if (btn.dataset.gmax !== undefined) {
         formData = { spriteId: p.gigantamax.spriteId };
         label = `Gigantamax ${p.name}`;
+      } else if (btn.dataset.otherIndex !== undefined) {
+        formData = p.otherForms[Number(btn.dataset.otherIndex)];
+        label = formData.form;
       } else {
         label = '';
       }
@@ -3033,6 +3051,7 @@ let TEAM = [null, null, null, null, null, null];
 function emptySlot(speciesId) {
   return {
     speciesId,
+    form: null, // index into TB_DATA[speciesId].otherForms, or null for the base form
     nickname: '',
     item: '',
     ability: '',
@@ -3042,6 +3061,20 @@ function emptySlot(speciesId) {
     ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
     moves: ['', '', '', ''],
   };
+}
+
+// Resolves a slot's chosen form (if any) against its species' teambuilder
+// data, so every consumer (ability/move options, stat calc, type-weakness
+// analysis, Showdown export) uses that form's real baseStats/abilities/
+// moves/types instead of always the base form's -- e.g. picking
+// "Arceus-Fighting" actually offers Fighting-type coverage and the right
+// ability list, not just base Arceus's Multitype-only Normal-type data.
+// Falls back to the base tb (and the dex entry's own p.types) whenever no
+// form is chosen or the species has none.
+function effectiveTb(slot, tb) {
+  const f = (slot.form !== null && slot.form !== undefined) ? (tb.otherForms || [])[slot.form] : null;
+  if (!f) return { baseStats: tb.baseStats, abilities: tb.abilities, moves: tb.moves, types: null, formLabel: null, smogonKey: null };
+  return { baseStats: f.baseStats, abilities: f.abilities, moves: f.moves, types: f.types || null, formLabel: f.form, smogonKey: f.smogonKey || null };
 }
 
 function saveTeam() {
@@ -3129,8 +3162,26 @@ function slotHtml(slot, idx) {
   const p = DEX_BY_ID[slot.speciesId];
   const tb = TB_DATA[slot.speciesId] || { baseStats: {}, abilities: [], moves: [] };
   if (!p || !tb) return '';
+  const eff = effectiveTb(slot, tb);
 
-  const abilityOptions = tb.abilities.map(a => {
+  // A form matching the chosen otherForms label AND carrying its own
+  // sprite (checked by label, not index, since pokedex.json's otherForms
+  // only lists forms that have a distinct sprite -- some teambuilder-only
+  // forms, like Sinistcha-Masterpiece, don't and simply keep the base sprite).
+  const formSprite = eff.formLabel && (p.otherForms || []).find(f => f.form === eff.formLabel);
+  const spriteOverride = formSprite ? formSprite.spriteId : null;
+
+  const formOptions = (tb.otherForms && tb.otherForms.length) ? `
+    <div class="tb-field">
+      <label>Form</label>
+      <select data-field="form" data-slot="${idx}">
+        <option value=""${slot.form === null || slot.form === undefined ? ' selected' : ''}>${p.name} (Base Form)</option>
+        ${tb.otherForms.map((f, i) => `<option value="${i}"${slot.form === i ? ' selected' : ''}>${f.form}</option>`).join('')}
+      </select>
+    </div>
+  ` : '';
+
+  const abilityOptions = eff.abilities.map(a => {
     const info = TB_ABILITIES[a.id];
     const name = info ? info.name : a.id;
     return `<option value="${a.id}"${slot.ability === a.id ? ' selected' : ''}>${name}${a.hidden ? ' (Hidden)' : ''}</option>`;
@@ -3143,7 +3194,7 @@ function slotHtml(slot, idx) {
   const moveSelect = (i) => {
     const chosen = slot.moves[i];
     let opts = `<option value="">-- move ${i + 1} --</option>`;
-    opts += tb.moves.map(m => `<option value="${m.id}"${chosen === m.id ? ' selected' : ''}>${moveOptionLabel(m.id)}</option>`).join('');
+    opts += eff.moves.map(m => `<option value="${m.id}"${chosen === m.id ? ' selected' : ''}>${moveOptionLabel(m.id)}</option>`).join('');
     return `<select data-field="move-${i}" data-slot="${idx}">${opts}</select>`;
   };
 
@@ -3180,10 +3231,11 @@ function slotHtml(slot, idx) {
   return `
     <div class="team-slot" data-slot="${idx}">
       <div class="team-slot-header">
-        <img class="team-slot-sprite" src="${spriteUrl(p)}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
+        <img class="team-slot-sprite" src="${spriteUrl(p, { overrideId: spriteOverride })}" onerror="this.onerror=null;this.src='${SPRITE_FALLBACK}'" alt="${p.name} sprite">
         <div class="team-slot-name">${p.name}${p.regionalForm ? ` (${p.regionalForm})` : ''}</div>
         <button type="button" class="team-slot-remove" data-action="remove" data-slot="${idx}" title="Remove">&times;</button>
       </div>
+      ${formOptions}
       <div class="tb-row">
         <div class="tb-field">
           <label>Nickname</label>
@@ -3261,6 +3313,20 @@ document.getElementById('team-slots').addEventListener('input', e => {
   if (!field || !TEAM[idx]) return;
   const slot = TEAM[idx];
 
+  if (field === 'form') {
+    slot.form = target.value === '' ? null : parseInt(target.value, 10);
+    // A different form can have a different ability list and/or learnset
+    // -- drop any current pick that the new form no longer actually has,
+    // rather than silently keeping a now-invalid ability/move selected.
+    const eff = effectiveTb(slot, TB_DATA[slot.speciesId]);
+    if (!eff.abilities.some(a => a.id === slot.ability)) {
+      slot.ability = eff.abilities.length ? eff.abilities[0].id : '';
+    }
+    const validMoveIds = new Set(eff.moves.map(m => m.id));
+    slot.moves = slot.moves.map(m => (m && validMoveIds.has(m)) ? m : '');
+    renderTeamBuilder();
+    return;
+  }
   if (field === 'nickname') { slot.nickname = target.value; saveTeam(); return; }
   if (field === 'level') { slot.level = clampInt(target.value, 1, 100, slot.level); saveTeam(); return; }
   if (field === 'ability') { slot.ability = target.value; saveTeam(); return; }
@@ -3364,7 +3430,12 @@ document.getElementById('team-clear').addEventListener('click', () => {
 
 function exportSlotToShowdown(slot) {
   const p = DEX_BY_ID[slot.speciesId];
-  const speciesName = p.name + (p.regionalForm ? `-${p.regionalForm}` : '');
+  const eff = effectiveTb(slot, TB_DATA[slot.speciesId] || {});
+  // Use the form's own Showdown-style name (e.g. "Arceus-Fighting") when we
+  // have one on file for it, so the exported set actually names the form
+  // that was picked rather than always the base species -- only when we
+  // have the real Smogon-confirmed name, never a guessed one.
+  const speciesName = eff.smogonKey || (p.name + (p.regionalForm ? `-${p.regionalForm}` : ''));
   const lines = [];
   const nick = slot.nickname && slot.nickname.trim() ? slot.nickname.trim() : null;
   const itemInfo = slot.item ? TB_ITEMS[slot.item] : null;
@@ -3492,18 +3563,20 @@ function teamAnalysisHtml(team) {
   const filled = team.filter(Boolean);
   if (!filled.length) return '<p>Add at least one Pokemon to your team first.</p>';
 
-  const entries = filled.map(slot => ({
-    slot,
-    p: DEX_BY_ID[slot.speciesId],
-    tb: TB_DATA[slot.speciesId],
-  }));
+  const entries = filled.map(slot => {
+    const p = DEX_BY_ID[slot.speciesId];
+    const tb = TB_DATA[slot.speciesId];
+    return { slot, p, tb, eff: effectiveTb(slot, tb) };
+  });
 
   // ---- Defensive weaknesses: how many teammates are hit for 2x+ by each
   // attacking type, and does anyone on the team resist or is immune to it?
+  // Uses the chosen form's real type (Arceus-Fighting, Silvally-Water,
+  // etc.) when one is selected, not always the base form's.
   const weakRows = ALL_TYPES.map(atkType => {
     let weakCount = 0, resistOrImmuneCount = 0;
-    for (const { p } of entries) {
-      const mult = defendingMultiplier(p.types, atkType);
+    for (const { p, eff } of entries) {
+      const mult = defendingMultiplier(eff.types || p.types, atkType);
       if (mult >= 2) weakCount++;
       else if (mult < 1) resistOrImmuneCount++;
     }
@@ -3546,9 +3619,10 @@ function teamAnalysisHtml(team) {
     : `<p>Your team's chosen damaging moves hit <b>${coveredTypes.size} / ${ALL_TYPES.length}</b> defending types super-effectively.</p>` +
       (uncovered.length ? `<p class="guide-note">No chosen move is super-effective against: ${uncovered.join(', ')}.</p>` : '<p class="guide-note">Full type coverage across every defending type &mdash; nice.</p>');
 
-  // ---- Speed ranking, using each slot's actual level/EVs/IVs/nature.
-  const speedRanked = entries.map(({ slot, p, tb }) => ({
-    name: p.name, speed: slotComputedStats(slot, tb).spe,
+  // ---- Speed ranking, using each slot's actual level/EVs/IVs/nature (and
+  // its chosen form's base Speed, if a form is selected).
+  const speedRanked = entries.map(({ slot, p, eff }) => ({
+    name: eff.formLabel || p.name, speed: slotComputedStats(slot, eff).spe,
   })).sort((a, b) => b.speed - a.speed);
   const speedHtml = `
     <table class="guide-table">
